@@ -1,0 +1,59 @@
+
+                                      TeX_9                                  
+
+                        A semi-automatic, prefix-operated                    
+                                  TeX ftplugin                               
+                             with lots of firepower!                         
+
+    Author:  Elias Toivanen '< elias [dot] toivanen [ät] helsinki [dot] fi >'
+    License: Public domain
+    Version: 1.0
+
+    TeX_9 is a ftplugin that enhances significantly the writing experience of
+    high quality documents with LaTeX and Vim. The scope of TeX_9 is to rely
+    first and foremost on features that are already available in Vim and try
+    to keep things as simple and snappy as possible. Indeed, TeX_9's codebase
+    is only about 500 SLOC. 
+    
+    Most of TeX_9 is implemented in Python (2.6) and therefore a Vim
+    installation with Python support is required.  In addition, TeX_9 depends
+    on the matchit plugin (>= 1.13.2) by Benji Fisher.  Matchit is shipped with
+    the standard installation of Vim but it is also bundled with TeX_9 for
+    convenience. 
+
+    TeX_9's main features are
+        * Compile, debug and view documents from within Vim 
+        * Insert LaTeX code snippets with ease
+        * Select-objects for inline maths and math environments
+        * Omni-completion of BibTeX database entries and label references.
+        * Filetype specific indentation (courtesy of Johannes Tanzler)
+        * LaTeX2e manual (ported to Vim by Mikolaj Machowski)
+        * No-hassle settings, relatively few mappings
+
+    TODOs in descending priority
+        * Formatexpr for TeX
+        * Keyword completion to support maths
+        * Use Vimballs for distribution
+        * SyncTeX support & Evince
+        * Test portability
+
+    Shoutouts
+        * Carl Mueller, this ftplugin was inspired by his `auctex.vim' script
+        * Vim-LaTeX people Srinath Avadhanula, Mikolaj Machowski and Benji Fisher
+        * Johannes Tanzler
+
+==============================================================================
+
+1.      Quick help for installation
+
+        * Unzip the tarball to your local Vim tree (usually ~/.vim)
+        * Update helptags (:helptags ~/.vim/doc/)
+        * Read the help on TeX_9 (:help tex_nine)
+
+==============================================================================
+
+
+
+ vim:tw=78:ts=8:norl
+
+

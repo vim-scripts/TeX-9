@@ -1,12 +1,10 @@
 This is a mirror of http://www.vim.org/scripts/script.php?script_id=3508
 
-
     TeX_9                                  
                      
-
     Author:  Elias Toivanen
     License: Public domain
-    Version: 1.0
+    Version: 1.05
 
     TeX_9 is a ftplugin that enhances significantly the writing experience of
     high quality documents with LaTeX and Vim. The scope of TeX_9 is to rely
@@ -28,13 +26,6 @@ This is a mirror of http://www.vim.org/scripts/script.php?script_id=3508
         * Filetype specific indentation (courtesy of Johannes Tanzler)
         * LaTeX2e manual (ported to Vim by Mikolaj Machowski)
         * No-hassle settings, relatively few mappings
-
-    TODOs in descending priority
-        * Formatexpr for TeX
-        * Keyword completion to support maths
-        * Use Vimballs for distribution
-        * SyncTeX support & Evince
-        * Test portability
 
     Shoutouts
         * Carl Mueller, this ftplugin was inspired by his `auctex.vim' script

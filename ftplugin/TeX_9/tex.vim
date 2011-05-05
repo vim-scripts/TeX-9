@@ -9,6 +9,7 @@
 "               Settings
 " ******************************************
 setl completeopt=longest,menuone tw=66 sw=2 
+setl fo=tcq
 setl tabstop=8 notimeout omnifunc=tex_nine#TexComplete
 let b:tex_cwd = fnameescape(getcwd())
 
@@ -139,7 +140,7 @@ inoremap <buffer> <LocalLeader><CR> \nonumber\\<CR>
 " Enlarged delimiters
 inoremap <buffer> <LocalLeader>( \left(\right)<Esc>F(a
 inoremap <buffer> <LocalLeader>[ \left[\right]<Esc>F[a
-inoremap <buffer> <LocalLeader>{ \left{\right}<Esc>F{a
+inoremap <buffer> <LocalLeader>{ \left\{ \right\}<Esc>F a
 
 " Neat insertion of superscripts and subscripts
 inoremap <buffer><expr> _ tex_nine#IsLeft('_') ? '{}<Left>' : '_'

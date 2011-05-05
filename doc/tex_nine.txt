@@ -8,7 +8,7 @@
 
     Author:  Elias Toivanen '< elias [dot] toivanen [ät] helsinki [dot] fi >'
     License: Public domain
-    Version: 1.0
+    Version: 1.05
 
     TeX_9 is a ftplugin that enhances significantly the writing experience of
     high quality documents with LaTeX and Vim. The scope of TeX_9 is to rely
@@ -31,13 +31,6 @@
         * Filetype specific indentation (courtesy of Johannes Tanzler)
         * LaTeX2e manual (ported to Vim by Mikolaj Machowski)
         * No-hassle settings, relatively few mappings
-
-    TODOs in descending priority
-        * Formatexpr for TeX
-        * Keyword completion to support maths
-        * Use Vimballs for distribution
-        * SyncTeX support & Evince
-        * Test portability
 
     Shoutouts
         * Carl Mueller, this ftplugin was inspired by his `auctex.vim' script
@@ -74,15 +67,16 @@
     g:tex_bibfiles
         * Vim list that enumerates the BibTeX databases you want to use
         * You need only to specify the name of your database (don't omit
-          the file extension) if the file resides under a valid texmf
-          tree. Alternatively, you may specify the whole path.
+          the file extension) if the file resides under a valid texmf tree,
+          that is under `$TEXMFHOME/bibtex/bib/'. Alternatively, you may 
+          specify the whole path.
         * Default: None
 
     g:tex_verbose
         * Boolean
-        * If set to 1, TeX_9 doesn't attempt to filter the irrelevant
+        * If set to 1, TeX_9 doesn't attempt to filter irrelevant
           error messages that LaTeX compilers produce.
-        * Default: Errormessages are filtered.
+        * Default: Error messages are filtered.
 
     Example vimrc for old school latex users: >
 
@@ -138,7 +132,7 @@
     references; <LocalLeader>K, `big compile', calls additionally bibtex
     and should get the cross-references right. Typing <LocalLeader>V
     should open the document in your system's default PDF viewer,
-    unless you didn't set `g:tex_viewer' to something else. Finally,
+    if you didn't set `g:tex_viewer' to something else. Finally,
     <LocalLeader>Q views the quickfix window where you get an overview
     of the potential errors in your LaTeX manuscript.
 

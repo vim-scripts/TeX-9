@@ -47,7 +47,7 @@ class TeXNineSnippets(object):
         lines = string.splitlines(True)
 
         # Format the snippet 
-        lines = filter( lambda x: '#' not in x, 
+        lines = filter(lambda x: '#' not in x, 
                 map(lambda y: y.lstrip(' '), lines) )
 
         if lines:
@@ -92,7 +92,7 @@ class TeXNineSnippets(object):
     def _insert_generic_snippet(self, label, row):
         if vim.eval('&ft') == 'tex':
 
-            generic_snippet = "\\begin{"+label+"}\\end{"+label+"}"+""+str(row)+"Gi"
+            generic_snippet = "\\begin{"+label+"}\n\\end{"+label+"}"+""+str(row)+"Gi"
             vim.command("return '{0!s}'".format(generic_snippet))
 
         elif vim.eval('&ft') == 'bib':
@@ -118,9 +118,8 @@ class TeXNineOmni(object):
 
     def _bibparser(self, fname):
         try:
-            pat = re.compile('^@\w+{(\S+),', re.M)
             with open(fname.encode('string-escape')) as f:
-                return pat.findall(f.read(), re.M)
+                return re.findall('^@\w+{(\S+) *,', f.read(), re.M)
 
         except IOError:
             vim.command(self.errormsg.format(fname))
@@ -256,8 +255,7 @@ class TeXNineCycler(object):
             self.iter_obj[delim] = itertools.cycle(self.delimiters[delim])
             return self.iter_obj[delim].next().decode('ascii')
 
-def tex_nine_header(label='%  Last Change:',
-                    timestring='%Y %b %d'):
+def tex_nine_header(label='%  Last Change:', timestring='%Y %b %d'):
     b = vim.current.buffer
     date = time.strftime(timestring)
     if len(b) >= 10 and vim.eval('&modifiable'):
@@ -266,8 +264,7 @@ def tex_nine_header(label='%  Last Change:',
                 b[i] = '{0} {1}'.format(label, date)
                 return
 
-def tex_nine_skeleton(fname,
-                      timestring='%Y %b %d'):
+def tex_nine_skeleton(fname, timestring='%Y %b %d'):
     with open(fname) as skeleton:
         b = vim.current.buffer
         template = Template(skeleton.read())

@@ -1,0 +1,25 @@
+1.1:
+    * SyncTeX support when using Evince (2.32)
+
+    - Doesn't support whitespaces or non-ASCII characters in filenames
+
+    * Jump to a BibTeX database (gb) from the manuscript.
+
+    - Looks at the <cword> variable under the cursor
+
+    * Improved BibTeX handling: 
+    - Databases in the compilation directory take precedence.
+
+    * Omnicompletion () of fonts and pictures.
+
+    - font completion works with fontspec command \setmainfont
+    - picture completion works inside \includegraphics command
+    - supported formats: png, jpg, eps and pdf
+
+
+    --Elias Toivanen, Thu 30 Jun 2011 11:44:50 PM EEST
+
+1.1.5:
+    * Fixed bugs related to omni-completion of fonts/pics
+
+    --Elias Toivanen, Sun 03 Jul 2011 05:16:10 PM EEST

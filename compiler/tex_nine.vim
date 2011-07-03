@@ -1,7 +1,6 @@
 " LaTeX filetype plugin: Compiler file
 " Compiler:     TeX and friends
-" Last Change:  March 5, 2011
-" Licence:      Public Domain
+" Last Change:  June 22, 2011
 
 let s:cpo_save = &cpo
 set cpo-=C
@@ -52,6 +51,12 @@ if exists('g:tex_flavor')
 else
     let &makeprg='latex -file-line-error -interaction=nonstopmode'
 endif
+
+if exists('g:tex_synctex') && g:tex_synctex
+    let &makeprg.=' -synctex=1'
+endif
+
+let &makeprg.=' %:t'
 
 let &cpo = s:cpo_save
 unlet s:cpo_save

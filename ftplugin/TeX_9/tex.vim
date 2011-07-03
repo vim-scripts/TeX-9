@@ -1,9 +1,9 @@
 " LaTeX filetype plugin: LaTeX settings
 " Language:     LaTeX (ft=tex)
 " Maintainer:   Elias Toivanen
-" Version:	1.2.2beta
-" Last Change:	March 3, 2011
-" License:      Public Domain
+" Version:	1.1.5
+" Last Change:	July 3, 2011
+" Licence:      GPL
 
 " ******************************************
 "               Settings
@@ -16,34 +16,25 @@ let b:tex_cwd = fnameescape(getcwd())
 " ******************************************
 "             Autocommands
 " ******************************************
+augroup tex_nine
 au BufWritePre *.tex call tex_nine#UpdateWithLastMod()
-au QuickFixCmdPre make lcd %:h
 au CursorHoldI *.tex python cycler.pos = None
+au QuickFixCmdPre make lcd %:h
+au QuickFixCmdPost make call tex_nine#PostProcess(b:tex_cwd)
+augroup END
 
 " ******************************************
 "           User preferences
 " ******************************************
-if !exists('g:tex_verbose') || g:tex_verbose != 1
-    au QuickFixCmdPost make call tex_nine#PostProcess(b:tex_cwd)
-else
+if exists('g:tex_verbose') && g:tex_verbose == 1
+    au! tex_nine QuickFixCmdPost make 
     au QuickFixCmdPost make exe 'lcd '.b:tex_cwd
 endif
 
 if exists('g:tex_flavor')
     compiler tex_nine
-    let &makeprg.=' %:t'
-
-    function! s:BibTeX()
-        exe "silent make!"
-        exe "lcd %:h"
-        exe "silent !bibtex ".fnameescape(expand('%<'))
-        exe "lcd ".b:tex_cwd
-        exe "silent make!"
-        exe "silent make!"
-    endfunction
-
-    noremap <buffer><silent> <LocalLeader>k :silent make!<CR>
-    noremap <buffer><silent> <LocalLeader>K :call <SID>BibTeX()<CR>
+    noremap <buffer><silent> <LocalLeader>k :call tex_nine#QuickCompile()<CR>
+    noremap <buffer><silent> <LocalLeader>K :call tex_nine#DeepCompile()<CR>
 endif
 
 if !exists('g:tex_viewer')
@@ -56,18 +47,26 @@ endfunction
 
 noremap <buffer> <LocalLeader>V :call <SID>ViewDocument()<CR><Space>
 
-if exists('g:tex_bibfiles')
+if exists('g:tex_bibfiles') && type(g:tex_bibfiles) == type([])
     call tex_nine#SetupBibTeX()
-    noremap <buffer><silent> <LocalLeader>U :call tex_nine#SetupBibTeX('update')<CR>
+elseif exists('g:tex_bibfiles')
+    echoerr "`g:tex_bibfiles' must be a Vim list."
+endif
+
+if exists('g:tex_synctex') && g:tex_synctex == 1
+    call tex_nine#SetupSyncTeX()
+    vnoremap <buffer><silent> S <Esc>:call tex_nine#SyncView()<CR> 
 endif
 
 " ******************************************
 "         Normal mode mappings
 " ******************************************
-noremap <buffer><silent> <LocalLeader>Q :cw<CR>
+noremap <buffer><silent> <LocalLeader>U :call tex_nine#SetupBibTeX('update')<CR>
+noremap <buffer><silent> <LocalLeader>Q :copen<CR>
 noremap <buffer><silent> <C-B> ?\\begin\\|\\end<CR>
 noremap <buffer><silent> <C-F> /\\end\\|\\begin<CR>
 noremap <buffer><silent> gd yiB/\\label{<C-R>0}<CR>
+noremap <buffer><silent> gb :call tex_nine#BibQuery()<CR>
 noremap <buffer><silent> <F1> :call tex_nine#InsertTemplate(b:skeleton)<CR>
 
 " ******************************************
@@ -169,6 +168,7 @@ if exists('loaded_matchit')
     omap <buffer><silent> ap :normal vap<CR>
 
 endif
+
 
 "DISABLED
 "inoremap <buffer><expr> { tex_nine#IsLeft('{') ? '<Right><BS>' : '{}<Left>'

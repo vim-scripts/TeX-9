@@ -1,63 +1,72 @@
 *tex_nine.txt* 
 
-                                      TeX_9                                  
+                                      TeX 9                                  
 
                         A semi-automatic, prefix-operated                    
-                                  TeX ftplugin                               
+                                  LaTeX ftplugin                               
                              with lots of firepower!                         
 
-    Author:  Elias Toivanen '< elias [dot] toivanen [ät] helsinki [dot] fi >'
-    License: Public domain
-    Version: 1.05
+    Author: Elias Toivanen 
+    Email: See README
+    License: GPL
+    Version: 1.1.5
 
-    TeX_9 is a ftplugin that enhances significantly the writing experience of
-    high quality documents with LaTeX and Vim. The scope of TeX_9 is to rely
-    first and foremost on features that are already available in Vim and try
-    to keep things as simple and snappy as possible. Indeed, TeX_9's codebase
-    is only about 500 SLOC. 
+    TeX 9 is a filetype plugin that enhances significantly the writing
+    experience of high quality documents with LaTeX and Vim. The scope of TeX
+    9 is to rely first and foremost on features that are already available in
+    Vim and try to keep things as simple and snappy as possible. Indeed, TeX
+    9's codebase is only about 600 SLOC. 
     
-    Most of TeX_9 is implemented in Python (2.6) and therefore a Vim
+    Most of TeX 9 is implemented in Python (2.6, 2.7) and therefore a Vim
     installation with Python support is required (see|feature-list|).  In
-    addition, TeX_9 depends on the matchit plugin (>= 1.13.2) by Benji Fisher.
+    addition, TeX 9 depends on the matchit plugin (>= 1.13.2) by Benji Fisher.
     Matchit is shipped with the standard installation of Vim but it is also
-    bundled with TeX_9 for convenience. See |matchit-install| for further
+    bundled with TeX 9 for convenience. See |matchit-install| for further
     information.
 
-    TeX_9's main features are
-        * Compile, debug and view documents from within Vim 
-        * Insert LaTeX code snippets with ease
-        * Select-objects for inline maths and math environments
+    TeX 9's main features are
+        * Compile, debug and view documents from within Vim.
+        * Insert LaTeX code snippets with ease.
+        * Select-objects for in-line maths and math environments.
         * Omni-completion of BibTeX database entries and label references.
-        * Filetype specific indentation (courtesy of Johannes Tanzler)
-        * LaTeX2e manual (ported to Vim by Mikolaj Machowski)
-        * No-hassle settings, relatively few mappings
+        * SyncTeX support for Evince 2.32 (requires python-dbus).
+        * Filetype specific indentation (courtesy of Johannes Tanzler).
+        * LaTeX2e manual (ported to Vim by Mikolaj Machowski).
+        * No-hassle settings, relatively few mappings.
 
     Shoutouts
         * Carl Mueller, this ftplugin was inspired by his `auctex.vim' script
         * Vim-LaTeX people Srinath Avadhanula, Mikolaj Machowski and Benji Fisher
-        * Johannes Tanzler
+        * Johannes Tanzler, Jose Aliste, Sergio Losilla
+
+    TODOs
+        * Windows support: adding the necessary hooks for Windows support
+          should quite trivial thanks to Python, but I do not have an access
+          to such a computer. Help is welcome.
 
 ==============================================================================
 
 *TeX_9* *tex_nine*
 
-    1.      Installation                            |tex_nine-installation|
-    2.      Basics                                  |tex_nine-basics|
-    3.      Mappings                                |tex_nine-mappings|
-    4.      Snippets                                |tex_nine-snippets|
-    5.      Tips and tricks                         |tex_nine-tips|
+    1.  Installation                                 |tex_nine-installation||
+    2.  Basics                                       |tex_nine-basics|
+    3.  Snippets                                     |tex_nine-snippets|
+    4.  BibTeX                                       |tex_nine-bibtex|
+    5.  SyncTeX                                      |tex_nine-synctex|
+    6.  Mappings                                     |tex_nine-mappings|
+    7.  Tips and trick                               |tex_nine-tips|
 
 ==============================================================================
 
 1.  Installation                                    *tex_nine-installation*
 
-    TeX_9 is distributed as a gzipped tarball. Unzip it to your local runtime
+    TeX 9 is distributed as a gzipped tarball. Unzip it to your local runtime
     path, usually `~/.vim/'. The scripts are located in the `ftplugin/TeX_9'
-    directory and all TeX_9 files mentioned in this helpfile are relative to
+    directory and all TeX 9 files mentioned in this help file are relative to
     that. 
 
     Note! In your vimrc, it's mandatory to set `g:tex_flavor' to the compiler
-    you wish to use or otherwise TeX_9 is not loaded at all. Other settings
+    you wish to use or otherwise TeX 9 is not loaded at all. Other settings
     you may want to tweak are:
 
     g:tex_viewer  
@@ -66,17 +75,26 @@
 
     g:tex_bibfiles
         * Vim list that enumerates the BibTeX databases you want to use
-        * You need only to specify the name of your database (don't omit
-          the file extension) if the file resides under a valid texmf tree,
-          that is under `$TEXMFHOME/bibtex/bib/'. Alternatively, you may 
-          specify the whole path.
-        * Default: None
+        * You need only to specify the name of your database if the file 
+          resides under a valid texmf tree, i.e. under
+          `$TEXMFHOME/bibtex/bib/', or in the compilation folder.
+          Alternatively, you may specify the whole path.
+        * Default: Disabled
 
     g:tex_verbose
         * Boolean
-        * If set to 1, TeX_9 doesn't attempt to filter irrelevant
-          error messages that LaTeX compilers produce.
+        * If set to 1, TeX 9 doesn't attempt to filter irrelevant
+          warning messages that LaTeX compilers produce. Error messages
+          are gathered in a ||quickfix|| list that you may access by
+          typing <LocalLeader>Q in normal mode.
         * Default: Error messages are filtered.
+
+    g:tex_synctex
+        * Boolean
+        * Evince 2.32 only
+        * If set to 1, you can highlight lines in the PDF you're writing based
+          on where you are in Vim. See more detailed instructions below.
+        * Default: Disabled
 
     Example vimrc for old school latex users: >
 
@@ -93,7 +111,7 @@
     You can safely erase the header with dynamical content if you don't
     want it.
 
-    Finally, should you want to disable TeX_9 temporarily, put this in
+    Finally, should you want to disable TeX 9 temporarily, put this in
     your vimrc: >
 
         au BufReadPre *.tex let b:init_tex_nine = 1
@@ -103,14 +121,12 @@
 
 2.  Basics                                          *tex_nine-basics*
 
-2.1 LaTeX
-
-    In an empty LaTeX manuscript, press <F1> to insert a skeleton of
-    a document. Almost all other TeX_9 mappings are prefixed with
-    |maplocalleader| that defaults to semi-colon, `;'. Typing `;a'
-    would result in `\alpha' for instance. See |tex_nine-mappings|
-    below for a complete listing. To insert the actual character that
-    <LocalLeader> was set to, type <LocalLeader><LocalLeader>.
+    In an empty LaTeX manuscript, press <F1> to insert a skeleton of a
+    document. Almost all other TeX 9 mappings are prefixed with
+    |maplocalleader| that defaults to semi-colon, `;'. Typing `;a' would
+    result in `\alpha' for instance. See |tex_nine-mappings| below for a
+    complete listing. To insert the actual character that <LocalLeader> was
+    set to, type <LocalLeader><LocalLeader>.
 
     The following mappings work in insert mode. Use <LocalLeader>C to
     insert a citation, i.e. `\cite{citekey}'. You're prompted with
@@ -120,37 +136,100 @@
     a similar way: the corresponding mapping is <LocalLeader>R. Label
     search is performed only in the current buffer.
 
-    To insert an environment, press <LocalLeader>B. You're prompted
-    for an environment name. Notice that you can use <Tab> to complete
-    the names and arrow keys to browse history! Finally, should you
-    forget the name of a standard LaTeX command, type <LocalLeader>K
-    for dictionary completion, or should you need advice on LaTeX,
-    consult the LaTeX2e manual with `:help latex'.
+    To insert an environment, press <LocalLeader>B. You're prompted for an
+    environment name and if a corresponding LaTeX code snippet was defined, it
+    is inserted into the manuscript. Finally, should you forget the name of a
+    standard LaTeX command, type <LocalLeader>K for dictionary completion, or
+    should you need advice on LaTeX, consult the LaTeX2e manual with `:help
+    latex'.
 
     You may compile the document in normal mode. <LocalLeader>k, `small
-    compile', compiles your document once and doesn't bother about
-    references; <LocalLeader>K, `big compile', calls additionally bibtex
-    and should get the cross-references right. Typing <LocalLeader>V
-    should open the document in your system's default PDF viewer,
-    if you didn't set `g:tex_viewer' to something else. Finally,
-    <LocalLeader>Q views the quickfix window where you get an overview
-    of the potential errors in your LaTeX manuscript.
-
-2.2 BibTeX
-
-    Snippet completion is supported and the mapping is the same,
-    <LocalLeader>B. In addition, <C-F> and <C-B> are remapped to jump
-    between individual entries.
-
+    compile', compiles your document once and doesn't bother about references;
+    <LocalLeader>K, `big compile', calls additionally bibtex and should get
+    the cross-references right. You're informed about potential errors: to go
+    over them open the ||quickfix|| list with <LocalLeader>Q. Typing
+    <LocalLeader>V should open the document in your system's default PDF
+    viewer, if you didn't set `g:tex_viewer' to something else. 
 
 ==============================================================================
 
-3.  Mappings                                        *tex_nine-mappings*
+3.  Snippets                                        *tex_nine-snippets*
+
+    When you want to insert a LaTeX snippet with <LocalLeader>B, notice that
+    the input prompt is <Tab>-completable. Your input is matched against words
+    in `dictionaries/tex_dictionary.txt'. Once entered, the name of the
+    environment is matched against keywords in the file
+    `snippets/tex_snippets.snippets'. Matching snippets are inserted.
+    Otherwise TeX 9 inserts a generic environment in LaTeX manuscripts and
+    raises an error in BibTeX files.
+    >
+        % Generic environment
+        \begin{keyword}
+
+        \end{keyword}
+<
+    You may extend the snippet file with your own environments and you will
+    notice that the syntax bears resemblance with Michael Sander's snipMate
+    plugin (http://www.vim.org/scripts/script.php?script_id=2540). TeX 9
+    leaves the <Tab> key untouched so that you may still resort to snipMate if
+    you so prefer. If your custom environments is not included in
+    `tex_dictionary.txt', append it there. >
+            
+        :cd ~/.vim/ftplugin/TeX_9/dictionaries
+        :!echo 'new_environment' >> tex_dictionary.txt
+<
+==============================================================================
+
+4.  BibTeX                                          *tex_nine-bibtex*
+
+    When you want to revise a particular entry in your database, you may
+    easily jump to it by pressing `gb' over its citekey, i.e.
+    `\cite{citekey}'. This command is in line with ||gd|| and ||gf|| with the
+    exception that an additional preview window is opened so that you can jump
+    back to the original manuscript.
+
+    When you want to extend or update your databases, press <LocalLeader>U in
+    normal mode either while in the database or the manuscript. If you
+    want to include a new database, redefine `g:tex_bibfiles' and press
+    <LocalLeader>U again. 
+    >
+        :let g:tex_bibfiles += ['ad_hoc.bib']
+<
+    Remember to redefine the `\bibliography' command
+    accordingly. TeX 9 doesn't bother to check it at all to avoid problems
+    when viewing others' LaTeX manuscripts.
+
+    Finally, <C-F> and <C-B> are remapped to jump between database entries in
+    BibTeX files.
+
+==============================================================================
+
+5.  SyncTeX                                         *tex_nine-synctex*
+
+    At this stage SyncTeX support is only targeted at Gnome 2.32 users that
+    use Evince 2.32 (Ubuntu 11.04 etc.). If you enabled `g:tex_synctex', you
+    may look up how the line or equation you're typesetting looks in the PDF
+    and vice versa.  Forward search (LaTeX manuscript -> PDF) is performed by
+    typing VS, "Visual Syncronize", in normal mode. Backward search (PDF ->
+    LaTeX manuscript) is performed by Ctrl-clicking a line in the PDF you're
+    viewing with Evince. Naturally, this only works if you're searching a
+    up-to-date version of your manuscript.
+
+    SyncTeX support should be considered experimental. Evince uses DBUS to
+    communicate with TeX 9 and therefore you need to have `python-dbus'
+    installed on your computer. The DBUS API has changed in Gnome 3 and so
+    this feature isn't available for Gnome 3 users. In addition, current
+    implementation does not support URI's with whitespaces or non-ASCII
+    characters.
+
+==============================================================================
+
+6.  Mappings                                        *tex_nine-mappings*
 
     <LocalLeader> is semi-colon by default. Change the value of
     'maplocalleader' in `ftplugin/tex_nine.vim' to suit your taste.
 
-3.1 Insert mode >
+6.1 Insert mode >
 
         <LocalLeader><LocalLeader>          <LocalLeader>
         <LocalLeader>K                      Dictionary completion
@@ -158,7 +237,7 @@
         <LocalLeader>B                      Insert an environment
         <LocalLeader>R                      Insert a reference
 <
-        ..
+        Greek
         >
         <LocalLeader>a                      \alpha
         <LocalLeader>b                      \beta
@@ -194,7 +273,8 @@
         <LocalLeader>X                      \Xi
         <LocalLeader>Y                      \Psi
 <
-        .. >
+        Maths
+        >
 
         <LocalLeader>N                      \nabla
         <LocalLeader>S                      \sum_{}^{}
@@ -221,19 +301,26 @@
         <LocalLeader><CR>                   \nonumber\\<CR>
 <
 
-3.2 Normal Mode >
+6.2 Normal Mode >
 
         <F1>                                Insert a template file
         <C-F>                               Jump to next \\(begin|end)
         <C-B>                               Jump to previous \\(begin|end)
         gd                                  Goto label's declaration
+        gb                                  Goto citekey's declaration
         <LocalLeader>k                      Small compile
         <LocalLeader>K                      Big compile
         <LocalLeader>V                      View the document
-        <LocalLeader>Q                      View quickfix window
+        <LocalLeader>Q                      View the quickfix window
         <LocalLeader>U                      Update BibTeX database
+
 <
-3.3 Extras
+6.3 Visual Mode
+>
+        S                                   SyncTeX: Highlight current line
+                                            in the PDF you're writing.
+<
+6.4 Extras
 
     The usual inner paragraph, 'ip', text object is revamped to handle
     equations. Press 'vip' anywhere inside a maths environment to
@@ -242,42 +329,22 @@
     may easily operate on in-line maths, e.g.  `$E=mc^{2}$', with the the
     text objects `i$' and `a$', inner and outer equation.
     
-    TeX_9 completes dollar signs, parens, brackets and curly braces. In
+    TeX 9 completes dollar signs, parens, brackets and curly braces. In
     similar vein, type '^^' to insert '^{}', '__' to insert '_{}', '~~' to
     insert '\approx' and '==' to insert aligned equation sign '&='. 
 
+    Try omni-completion () inside curly braces when you're including a
+    picture with `\includegraphics{}' or when you're setting your font with
+    the `fontspec' package, i.e. `\setmainfont{}'. You'll get a listing of
+    pictures in the compilation folder in the first case and a list of
+    installed font on your system in the latter. Supported picture formats are
+    EPS, PDF, JPG and PNG.
+
 ==============================================================================
 
-4.  Snippets                                        *tex_nine-snippets*
+7.  Tips and trick                                  *tex_nine-tips*
 
-    The input prompt for environment completion is <Tab>-completable. Your
-    input is matched againts words in `dictionaries/tex_dictionary.txt'. Once
-    entered, the name of the environment is matched against keywords in the
-    file `snippets/tex_snippets.snippets'. If there is a match, the snippet
-    corresponding to that keyword is inserted into the current buffer.
-    Otherwise TeX_9 inserts a generic environment in LaTeX manuscripts and
-    raises an error in BibTeX files. >
-            
-        % Generic environment
-        \begin{keyword}
-
-        \end{keyword}
-<
-    You may extend the snippet file with your own environments and you will
-    notice that the syntax bears resemblance with Michael Sander's snipMate
-    plugin (http://www.vim.org/scripts/script.php?script_id=2540). TeX_9
-    leaves the <Tab> key untouched so that you may still resort to snipMate if
-    you so prefer. If your custom environments is not included in
-    `tex_dictionary.txt', append it there. >
-            
-        :cd ~/.vim/ftplugin/TeX_9/dictionaries
-        :!echo 'new_environment' >> tex_dictionary.txt
-<
-==============================================================================
-
-5.      Tips and trick                              *tex_nine-tips*
-
-5.1.1   Extending TeX_9: Custom template files
+7.1     Extending TeX 9: Custom template files
 
         You can create your own macros/mappings and enable them by placing
         them in a file that is located in the ftplugin directory and whose
@@ -295,7 +362,7 @@
                 
                 noremap <buffer> <F2> :call tex_nine#InsertTemplate(b:mytemp)<CR>
 
-5.1.2   Extending TeX_9: Shortcuts for snippets
+7.2     Extending TeX 9: Shortcuts for snippets
 
         Similarly, you may want to create shortcuts for snippet insertion if
         you don't want to use <LocalLeader>B all the time.
@@ -305,20 +372,9 @@
                 inoremap <buffer><expr> <F1> tex_nine#InsertEnvironment('equation')
 <
         If you come up with something sweet, please drop me a line (email
-        address in the header.).
+        address behind a reCAPTCHA in the README file.).
 
-5.2     Change BibTeX database on the fly
-    
-        After you've changed the argument(s) of the \bibliography command, you
-        can update TeX_9's citekeys by first redefining `g:tex_bibfiles' >
-                
-                let g:tex_bibfiles += ['~/ad_hoc.bib']
-<
-        and then typing <LocalLeader>U in normal mode. The \bibliography
-        command and `g:tex_bibfiles' will be kept separate to avoid problems
-        when users view other users' LaTeX manuscripts.
-
-5.3     Spell checking
+7.3     Spell checking
 
         If you've enabled 'modeline', you may conveniently activate spell
         checking in your LaTeX manuscripts by editing the modeline in the
@@ -335,14 +391,14 @@
 <       for disabling spell checking of comments that otherwise get messed up
         pretty badly.
 
-5.4     Remove temporary TeX files
+7.4     Remove temporary TeX files
     
         To delete the temporary files that LaTeX compilers produce, use
         shell/Vim expansions like so: >
 
                 !rm %<.{aux,bbl,toc,log}
 <
-5.5     Folding
+7.5     Folding
 
         With newer versions of Vim it's easy as >
 

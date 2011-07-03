@@ -1,11 +1,11 @@
 if !has('python') || !has('syntax')
-    echoerr "Error: TeX_9 requires Vim compiled with +python and +syntax"
+    echoerr "Error: TeX 9 requires Vim compiled with +python and +syntax"
     finish
 endif
 
 " ******************************************
-"          TeX_9 function library
-"              in Public Domain
+"          TeX 9 function library
+"               GPL Licensed 
 "                    by
 "              Elias Toivanen
 "
@@ -27,11 +27,115 @@ import itertools
 
 from string import Template
 from getpass import getuser
+from operator import methodcaller
+
+class TeXNineDocument(object):
+
+    def set_header(self, vimbuffer):
+        label='%  Last Change:'
+        timestring = '%Y %b %d'
+        date = time.strftime(timestring)
+        if len(vimbuffer) >= 10 and vim.eval('&modifiable'):
+            for i in range(10):
+                if label in str(vimbuffer[i]) and date not in str(vimbuffer[i]):
+                    vimbuffer[i] = '{0} {1}'.format(label, date)
+                    return
+
+    def insert_skeleton(self, fname, vimbuffer):
+        timestring = '%Y %b %d'
+        with open(fname) as skeleton:
+            template = Template(skeleton.read())
+
+            skeleton = template.safe_substitute(_file=os.path.basename(vimbuffer.name),
+                                    _date_created=time.strftime(timestring),
+                                    _author=getuser())
+
+            vimbuffer[:] = skeleton.splitlines(True)
+
+    def sanitize_quickfixlist(self):
+        """
+        Filters invalid and irrelevant error messages
+        """
+        ignored = ['Underfull','Overfull'] # More to come
+
+        # Too bad LaTeX spits out hard wrapped output. This
+        # causes problems with long error messages.
+        qf = vim.eval('getqflist()')
+
+        qf = filter(lambda x: int(x['valid'])
+                    and all( i not in x['text'] for i in ignored ), qf)
+                        
+
+        vim.command('call setqflist({0})'.format(qf))
+
+    def query_bibfiles(self):
+        """
+        Jumps to a BibTeX file containing the
+        citekey under the cursor and show a quickfix
+        window with the first item set to the LaTeX
+        manuscript.
+        """
+        try:
+            citekey = vim.eval("expand('<cword>')")
+            citekey = "/^@\S\+"+citekey+"/"
+            bibpaths = " ".join([ x.replace(' ', '\ ') for x in omni.bibpaths ])
+
+            vim.command('cgetexpr expand("%") . ":" . line(".") .  ":" . getline(".")[:20] ."..."')
+            vim.command('vimgrepadd {0} {1}'.format(citekey, bibpaths))
+
+            # Dunno why vimgrep doesn't jump and we have to do it explicitly
+            vim.command('cnext')
+            vim.command('cwindow')
+        except:
+            errormsg = "echoerr 'Cannot jump to a BibTeX file: None defined or no matches.'"
+            vim.command(errormsg)
+            return
+
+    def compile(self, vimbuffer):
+        """
+        Compiles the manuscript and updates bibtex
+        references. Because Vim's make command
+        calls additional post processing function and might
+        be hooked to SyncTex, intermediate passes are called
+        via subprocess to avoid overhead.
+
+        Quicklist is not popped up automatically. Rather,
+        user is informed about a clean compilation and
+        potenital errors.
+        """
+        absname = vimbuffer.name
+        basename = os.path.basename(absname)[:-len('.tex')]
+        cwd = os.path.dirname(absname)
+
+        subprocess.call([vim.eval('g:tex_flavor'), '-output-directory='+cwd,
+                        '-interaction=batchmode', absname], stdout=subprocess.PIPE)
+
+
+        bibtex_call = subprocess.Popen(['bibtex', basename+'.aux'],
+                                        stdout=subprocess.PIPE,
+                                        cwd=cwd)
+
+        output = bibtex_call.communicate()[0]
+
+        matches = re.findall('I didn.t find a database entry for .(\S+).', output)
+
+        subprocess.call([vim.eval('g:tex_flavor'), '-output-directory='+cwd,
+                        '-interaction=batchmode', absname], stdout=subprocess.PIPE)
+
+        # Create quickfix list
+        vim.command('silent make!')
+        
+        # Add some BibTeX errors that aren't
+        # included by default.
+        if matches:
+            for m in matches:
+                searchpat = "/"+m+"/j"
+                vim.command("vimgrepadd {0} %".format(searchpat))
 
 # Snippets
 class TeXNineSnippets(object):
     """
-    Snippet engine for TeX_9
+    Snippet engine for TeX 9
 
     Call `setup_snippets(fname)' to build up a list of
     snippets. Each entry is a dictionary with entries
@@ -41,18 +145,21 @@ class TeXNineSnippets(object):
 
     """
     def __init__(self):
+        
         self._snippets = []
+        self.lstripper = methodcaller('lstrip', ' ')
+        self.commentstripper = lambda x: '#' not in x
 
     def _parser(self, string):
         lines = string.splitlines(True)
 
         # Format the snippet 
-        lines = filter(lambda x: '#' not in x, 
-                map(lambda y: y.lstrip(' '), lines) )
+        lines = filter(self.commentstripper,
+                map(self.lstripper, lines))
 
         if lines:
             word = "".join(lines[1:]).rstrip('\n')
-            return {'abbr':str(lines[0]).rstrip('\n'),
+            return {'abbr':str(lines[0].rstrip('\n')),
                     'word':word}
 
     def setup_snippets(self, fname):
@@ -102,9 +209,9 @@ class TeXNineSnippets(object):
 # Omnicompletion
 class TeXNineOmni(object):
     """
-    Omni-completion handler for TeX_9
+    Omni-completion handler for TeX 9
 
-    Currently, citations and label references are completed.
+    Currently, citation, label references and system fonts are completed.
     Call `setup_citekeys(filelist)' to build a list of citation
     entries from filelist. Labels are searched only from the current
     buffer.
@@ -113,6 +220,7 @@ class TeXNineOmni(object):
     def __init__(self):
         self.keyword = None
         self.bibcompletions = []
+        self.bibpaths = []
         self.errormsg = "echoerr 'The BibTeX file you defined was invalid: {0}.'"
         self.updatemsg = "echomsg 'Updating BibTeX entries...'"
 
@@ -134,23 +242,42 @@ class TeXNineOmni(object):
         specified, setup_citekeys assumes that the bibfile
         is located in a texmf tree.
         """
-        bibfiles = vim.eval(filelist)
 
         if update:
+            self.bibpaths = []
             vim.command(self.updatemsg)
         elif self.bibcompletions:
+            # Return early if we already have
+            # what we want.
             return
 
+        bibfiles = vim.eval(filelist)
         self.bibcompletions = []
+
         for bibfile in bibfiles:
+
+            # Check first if the user gave just the filename
+            # for a bibfile in the compilation folder.
+            # This check also gives precedence to bibfiles
+            # that are located there so that system files may 
+            # be overridden.
+
+            fname = os.path.dirname(vim.current.buffer.name)
+            bibtemp = os.path.join(fname, bibfile).encode('string-escape')
+
+            if os.path.exists(bibtemp):
+                bibfile = bibtemp
+
             proc = subprocess.Popen(['kpsewhich','-must-exist', bibfile],
                                     stdout=subprocess.PIPE)
             bibpath = proc.communicate()[0].strip('\n')
+
 
             # kpsewhich returns the empty string
             # in all such cases where the file couldn't be found
             # irrespective of $TEXMFHOME
             if bibpath:
+                self.bibpaths += [bibpath]
                 citekeys = self._bibparser(bibpath)
             else:
                 vim.command(self.errormsg.format(bibfile))
@@ -159,11 +286,30 @@ class TeXNineOmni(object):
             # Appending an empty list is a NOP
             self.bibcompletions += citekeys
 
-    # Labels
+    # Utitility methods
     def _labels(self):
         vim.command('update')
-        pat = re.compile('\\\\label{(\S+)}')
+        pat = re.compile('\\\\label{([\w:.]+)}')
         return pat.findall("\n".join(vim.current.buffer[:]))
+
+    def _fonts(self):
+        proc = subprocess.Popen('fc-list',
+                                stdout=subprocess.PIPE)
+        output = proc.communicate()[0].splitlines()
+        output.sort()
+        output = [ i for i,j in itertools.groupby(output, lambda x: re.split('[:,]', x)[0]) ]
+        return output
+
+    def _pics(self):
+        extensions = [ '.PDF', '.PNG', '.JPG', '.JPEG', '.EPS', 
+                       '.pdf', '.png', '.jpg', '.jpeg', '.eps' ]
+
+        proc = subprocess.Popen(['ls', '-1', os.path.dirname(vim.current.buffer.name)],
+               stdout=subprocess.PIPE)
+
+        output = proc.communicate()[0].splitlines()
+        pics = [ pic for pic in output if pic[pic.rfind('.'):] in extensions  ]
+        return pics
 
     def findstart(self):
 
@@ -174,8 +320,8 @@ class TeXNineOmni(object):
                      line.rfind(',')))
 
         try:
-            keyword = re.findall('\\\\([\w*]+){', line)[-1]
-            self.keyword = keyword
+            keyword = re.findall('\\\\(\w+)([(].+[)])?([[].+[]])?{', line)[-1]
+            self.keyword = keyword[0]
         except IndexError:
             self.keyword = None
 
@@ -187,13 +333,18 @@ class TeXNineOmni(object):
 
     def completions(self):
 
+        compl = []
+
         # Natbib has \Cite.* type of of commands
-        if ( 'cite' in self.keyword or 'Cite' in self.keyword ) and self.bibcompletions: 
-            compl = str(self.bibcompletions).decode('string-escape')
-        elif 'ref' in self.keyword:
-            compl = str(self._labels()).decode('string-escape')
-        else:
-            compl = []
+        if self.keyword:
+            if ( 'cite' in self.keyword or 'Cite' in self.keyword ) and self.bibcompletions: 
+                compl = str(self.bibcompletions).decode('string-escape')
+            elif 'ref' in self.keyword:
+                compl = str(self._labels()).decode('string-escape')
+            elif 'font' in self.keyword or 'setmath' in self.keyword:
+                compl = str(self._fonts()).decode('string-escape')
+            elif 'includegraphics' in self.keyword:
+                compl = str(self._pics()).decode('string-escape')
 
         vim.command('return {0}'.format(compl))
 
@@ -255,51 +406,15 @@ class TeXNineCycler(object):
             self.iter_obj[delim] = itertools.cycle(self.delimiters[delim])
             return self.iter_obj[delim].next().decode('ascii')
 
-def tex_nine_header(label='%  Last Change:', timestring='%Y %b %d'):
-    b = vim.current.buffer
-    date = time.strftime(timestring)
-    if len(b) >= 10 and vim.eval('&modifiable'):
-        for i in range(10):
-            if label in str(b[i]) and date not in str(b[i]):
-                b[i] = '{0} {1}'.format(label, date)
-                return
-
-def tex_nine_skeleton(fname, timestring='%Y %b %d'):
-    with open(fname) as skeleton:
-        b = vim.current.buffer
-        template = Template(skeleton.read())
-
-        skeleton = template.safe_substitute(_file=os.path.basename(b.name),
-                                _date_created=time.strftime(timestring),
-                                _author=getuser())
-
-        b[:] = skeleton.splitlines(True)
-
-def tex_nine_quickfix():
-    ignored = ['Underfull','Overfull'] # More to come
-
-    # Too bad LaTeX spits out hard wrapped output. This
-    # causes problems with long error messages.
-    qf = vim.eval('getqflist()')
-    qf = filter(lambda x: int(x['valid'])
-                and all( i not in x['text'] for i in ignored ), qf)
-    # This is just to sedate Vim not to send the paradoxical 
-    # error message `No errors' when there are no errors!
-    if not qf:
-        qf.append({ 'text':'TeX_9: No errors.' })
-                    
-
-    vim.command('call setqflist({0})'.format(qf))
-
 # Public classes
+document = TeXNineDocument()
 cycler = TeXNineCycler()
 omni = TeXNineOmni()
 snippets = TeXNineSnippets()
 
-sys.path.extend(['.','..'])
 PYTHONEOF
         endfunction
-        call tex_nine#DefPython()
+call tex_nine#DefPython()
 endif
 
 
@@ -310,11 +425,73 @@ endif
 " ******************************************
 
 " ******************************************
+"     SyncTeX support for Evince 2.32
+" ******************************************
+
+if !exists("*tex_nine#SetupSyncTeX")
+function! tex_nine#SetupSyncTeX()
+python << PYTHONEOF
+sys.path.extend([vim.eval('b:pymodules')])
+import evince_dbus
+import dbus.mainloop.glib
+
+class TeXNineSyncTeX(evince_dbus.EvinceWindowProxy):
+    def __init__(self, b, source_handler):
+        self.uri = 'file://{0}.pdf'.format(b.buffer.name[:-len('.tex')])
+        evince_dbus.EvinceWindowProxy.__init__(self, self.uri, True)
+        self.source_handler = source_handler
+
+    def forward_search(self, b):
+        self.SyncView(b.buffer.name, b.window.cursor)
+
+dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+
+def source_handler(input_file, source_link):
+    vim.command('buffer {0}'.format(input_file))
+    vim.current.window.cursor = ( int(source_link[0]), 0 )
+    vim.command('normal V')
+
+try:
+    vimbuffers[vim.current.buffer.name] = TeXNineSyncTeX(vim.current, source_handler)
+except NameError:
+    vimbuffers = {}
+    vimbuffers[vim.current.buffer.name] = TeXNineSyncTeX(vim.current, source_handler)
+
+PYTHONEOF
+endfunction
+endif
+
+function! tex_nine#SyncView()
+    python vimbuffers[vim.current.buffer.name].forward_search(vim.current)
+endfunction
+
+" ******************************************
 "   Post processing of compilation calls
 " ******************************************
-function! tex_nine#PostProcess(cwd,...)
-    python tex_nine_quickfix()
+function! tex_nine#PostProcess(cwd)
+    python document.sanitize_quickfixlist()
     exe 'lcd '.a:cwd
+    
+    "
+    "let qf = filter(getqflist(), 'v:val.valid==1')
+    "call setqflist(qf)
+endfunction
+
+" ******************************************
+"           Compilation calls
+" ******************************************
+function! tex_nine#QuickCompile()
+    echo "Compiling...\r"
+    exe "silent make!"
+    let numerrors = len(filter(getqflist(), 'v:val.valid==1'))
+    echo "Compiling...".numerrors." Error(s)."
+endfunction
+
+function! tex_nine#DeepCompile()
+    echo "Compiling...\r"
+    python document.compile(vim.current.buffer)
+    let numerrors = len(filter(getqflist(), 'v:val.valid==1'))
+    echo "Compiling...".numerrors." Error(s)."
 endfunction
 
 " ******************************************
@@ -322,14 +499,39 @@ endfunction
 " ******************************************
 function! tex_nine#SetupBibTeX(...)
 
+    " Setup_citekeys returns immediately
+    " if omni.bibcompletions is not empty.
+    " This is to avoid unnecessary work
+    " when opening new tabs/buffers.
+    "
+    " Only in `update' mode is 
+    " omni.bibcompletions updated.
+
     if exists('a:1') && a:1 == 'update'
-        python omni.setup_citekeys('g:tex_bibfiles', update=True)
-        return
+
+        if !exists('g:tex_bibfiles')
+            echomsg 'Updating BibTeX entries...None present!'
+            return
+        else
+            python omni.setup_citekeys('g:tex_bibfiles', update=True)
+            return
+        endif
+
+    else
+
+        python omni.setup_citekeys('g:tex_bibfiles')
+
     endif
 
-    python omni.setup_citekeys('g:tex_bibfiles')
 
 endfunction!
+
+" ******************************************
+"          Jump to a bibfile
+" ******************************************
+function tex_nine#BibQuery()
+    python document.query_bibfiles()
+endfunction
 
 " ******************************************
 "             Omnicompletion
@@ -346,7 +548,7 @@ endfunction
 "             Update Header
 " ******************************************
 function! tex_nine#UpdateWithLastMod()
-    python tex_nine_header()
+    python document.set_header(vim.current.buffer)
 endfunction
 
 " ******************************************
@@ -386,7 +588,7 @@ endfunction
 "       Insert the skeleton file
 " ******************************************
 function! tex_nine#InsertTemplate(skeleton)
-   python tex_nine_skeleton(vim.eval('a:skeleton'))
+   python document.insert_skeleton(vim.eval('a:skeleton'), vim.current.buffer)
    update
    edit
 endfunction
@@ -432,6 +634,7 @@ function! tex_nine#IsLeft(lchar)
         endif
 
 endfunction
+
 
 " ******************************************
 "          Text Object for $$
@@ -512,3 +715,4 @@ endfunction
 " ******************************************
 
 
+" vim:tw=78:ts=8:sw=4:et

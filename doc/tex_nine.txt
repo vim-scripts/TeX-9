@@ -9,40 +9,33 @@
     Author: Elias Toivanen 
     Email: See README
     License: GPL
-    Version: 1.1.5
+    Version: 1.1.6
 
-    TeX 9 is a filetype plugin that enhances significantly the writing
-    experience of high quality documents with LaTeX and Vim. The scope of TeX
-    9 is to rely first and foremost on features that are already available in
-    Vim and try to keep things as simple and snappy as possible. Indeed, TeX
-    9's codebase is only about 600 SLOC. 
+
+    TeX 9 is a ftplugin that enhances significantly the writing experience of
+    high quality documents with LaTeX and Vim. The scope of TeX 9 is to rely
+    first and foremost on features that are already available in Vim and try
+    to keep things as simple and snappy as possible. 
     
     Most of TeX 9 is implemented in Python (2.6, 2.7) and therefore a Vim
-    installation with Python support is required (see|feature-list|).  In
-    addition, TeX 9 depends on the matchit plugin (>= 1.13.2) by Benji Fisher.
-    Matchit is shipped with the standard installation of Vim but it is also
-    bundled with TeX 9 for convenience. See |matchit-install| for further
-    information.
+    installation with Python support is required.  In addition, TeX 9 depends
+    on the matchit plugin (>= 1.13.2) by Benji Fisher. Matchit is shipped with
+    the standard installation of Vim but it is also bundled with TeX 9 for
+    convenience. 
 
-    TeX 9's main features are
-        * Compile, debug and view documents from within Vim.
-        * Insert LaTeX code snippets with ease.
-        * Select-objects for in-line maths and math environments.
-        * Omni-completion of BibTeX database entries and label references.
-        * SyncTeX support for Evince 2.32 (requires python-dbus).
-        * Filetype specific indentation (courtesy of Johannes Tanzler).
-        * LaTeX2e manual (ported to Vim by Mikolaj Machowski).
-        * No-hassle settings, relatively few mappings.
+     The main features of TeX 9 are
+        * Compile, debug and view documents from within Vim
+        * Insert LaTeX code snippets with ease
+        * Select-objects for inline maths and maths environments
+        * Omni-completion of BibTeX database entries and label references
+        * Filetype specific indentation (courtesy of Johannes Tanzler)
+        * LaTeX2e manual (ported to Vim by Mikolaj Machowski)
+        * No-hassle settings, relatively few mappings
 
     Shoutouts
         * Carl Mueller, this ftplugin was inspired by his `auctex.vim' script
         * Vim-LaTeX people Srinath Avadhanula, Mikolaj Machowski and Benji Fisher
         * Johannes Tanzler, Jose Aliste, Sergio Losilla
-
-    TODOs
-        * Windows support: adding the necessary hooks for Windows support
-          should quite trivial thanks to Python, but I do not have an access
-          to such a computer. Help is welcome.
 
 ==============================================================================
 
@@ -61,40 +54,38 @@
 1.  Installation                                    *tex_nine-installation*
 
     TeX 9 is distributed as a gzipped tarball. Unzip it to your local runtime
-    path, usually `~/.vim/'. The scripts are located in the `ftplugin/TeX_9'
-    directory and all TeX 9 files mentioned in this help file are relative to
-    that. 
+    path, usually `~/.vim/'. All TeX 9 specific files referred in this help
+    file are located under `ftplugin/TeX_9'. 
 
     Note! In your vimrc, it's mandatory to set `g:tex_flavor' to the compiler
-    you wish to use or otherwise TeX 9 is not loaded at all. Other settings
+    you wish to use or otherwise TeX 9 might not be loaded at all. Other settings
     you may want to tweak are:
 
     g:tex_viewer  
-        * Vim dictionary with entries 'app' and 'target'.
-        * Default: {'app': 'xdg-open', 'target': 'pdf'}
+        *   Vim dictionary with entries 'app' and 'target'.
+        *   Default: {'app': 'xdg-open', 'target': 'pdf'}
 
     g:tex_bibfiles
-        * Vim list that enumerates the BibTeX databases you want to use
-        * You need only to specify the name of your database if the file 
-          resides under a valid texmf tree, i.e. under
-          `$TEXMFHOME/bibtex/bib/', or in the compilation folder.
-          Alternatively, you may specify the whole path.
-        * Default: Disabled
+        *   Vim list that enumerates the BibTeX databases you want to use
+        *   You need only to specify the name of your database if the file 
+            resides under a valid texmf tree, i.e. under
+            `$TEXMFHOME/bibtex/bib/', or in the compilation folder.
+            Alternatively, you may specify the whole path.
+        *   Default: Disabled
 
     g:tex_verbose
-        * Boolean
-        * If set to 1, TeX 9 doesn't attempt to filter irrelevant
-          warning messages that LaTeX compilers produce. Error messages
-          are gathered in a ||quickfix|| list that you may access by
-          typing <LocalLeader>Q in normal mode.
-        * Default: Error messages are filtered.
+        *   Boolean
+        *   If set to 1, TeX 9 doesn't attempt to filter irrelevant
+            warning messages that LaTeX compilers produce. Error messages
+            are gathered in a ||quickfix|| list that you may access by
+            typing <LocalLeader>Q in normal mode.
+        *   Default: Error messages are filtered.
 
-    g:tex_synctex
-        * Boolean
-        * Evince 2.32 only
-        * If set to 1, you can highlight lines in the PDF you're writing based
-          on where you are in Vim. See more detailed instructions below.
-        * Default: Disabled
+    g:tex_cycle_delimeters
+        *   Boolean
+        *   If set to 0, delimiters ({, [, (, $) are not automatically
+            completed.
+        *   Default: Delimiters are completed.
 
     Example vimrc for old school latex users: >
 
@@ -108,8 +99,9 @@
 <
     Before you start typesetting documents, you may want to customize the
     document template file `tex_skeleton.tex' in the `skeleton' directory.
-    You can safely erase the header with dynamical content if you don't
-    want it.
+    The dynamic content in the header can be safely erased if you don't want
+    it. The file `tex_skeleton.tex.xelatex' shows the skeleton file that the
+    author is currently using.
 
     Finally, should you want to disable TeX 9 temporarily, put this in
     your vimrc: >
@@ -128,13 +120,12 @@
     complete listing. To insert the actual character that <LocalLeader> was
     set to, type <LocalLeader><LocalLeader>.
 
-    The following mappings work in insert mode. Use <LocalLeader>C to
-    insert a citation, i.e. `\cite{citekey}'. You're prompted with
-    a popup list of citekeys if you set `g:tex_bibfiles'. You can
-    keep on inserting citations inside the curly braces as long as
-    you separate them with commas. References, `\ref{ref}', work in
-    a similar way: the corresponding mapping is <LocalLeader>R. Label
-    search is performed only in the current buffer.
+    The following mappings work in insert mode. Use <LocalLeader>C to insert a
+    citation, i.e. `\cite{citekey}'. You're prompted with a popup list of
+    citekeys if you set `g:tex_bibfiles'. You can keep on inserting citations
+    inside the curly braces as long as you separate them with commas.
+    References, `\ref{ref}', work in a similar way: the corresponding mapping
+    is <LocalLeader>R. Label search is performed only in the current buffer.
 
     To insert an environment, press <LocalLeader>B. You're prompted for an
     environment name and if a corresponding LaTeX code snippet was defined, it
@@ -182,52 +173,41 @@
 
 4.  BibTeX                                          *tex_nine-bibtex*
 
-    When you want to revise a particular entry in your database, you may
-    easily jump to it by pressing `gb' over its citekey, i.e.
-    `\cite{citekey}'. This command is in line with ||gd|| and ||gf|| with the
-    exception that an additional preview window is opened so that you can jump
-    back to the original manuscript.
+    In addition to citekey completion, TeX 9 provides a couple of features
+    that make it easier to work with BibTeX and LaTeX files in the same Vim
+    session. You may take a quick peek at a particular BibTeX entry by
+    pressing `gb' over its citekey, i.e. \cite{citekey}. This command is in
+    line with ||gd|| and  |gf| with the exception that the BibTeX entry is
+    shown in a preview window (see |preview-window|).
 
-    When you want to extend or update your databases, press <LocalLeader>U in
-    normal mode either while in the database or the manuscript. If you
-    want to include a new database, redefine `g:tex_bibfiles' and press
-    <LocalLeader>U again. 
-    >
-        :let g:tex_bibfiles += ['ad_hoc.bib']
-<
-    Remember to redefine the `\bibliography' command
-    accordingly. TeX 9 doesn't bother to check it at all to avoid problems
-    when viewing others' LaTeX manuscripts.
-
-    Finally, <C-F> and <C-B> are remapped to jump between database entries in
-    BibTeX files.
+    You may add new databases on the fly by redefining `g:tex_bibfiles' and
+    pressing <LocalLeader>U in normal mode. This mapping updates the citekey
+    list that TeX 9 uses for completion. Remember to redefine the
+    `\bibliography' command accordingly. TeX 9 doesn't bother to check it at
+    all to avoid problems when viewing others' LaTeX manuscripts.
 
 ==============================================================================
 
 5.  SyncTeX                                         *tex_nine-synctex*
+    
+    TeX 9 1.1.6 drops SyncTeX support temporarily because lately there has
+    been some serious breakage in _all_ the components that are required for
+    this feature. To wit:
 
-    At this stage SyncTeX support is only targeted at Gnome 2.32 users that
-    use Evince 2.32 (Ubuntu 11.04 etc.). If you enabled `g:tex_synctex', you
-    may look up how the line or equation you're typesetting looks in the PDF
-    and vice versa.  Forward search (LaTeX manuscript -> PDF) is performed by
-    typing VS, "Visual Syncronize", in normal mode. Backward search (PDF ->
-    LaTeX manuscript) is performed by Ctrl-clicking a line in the PDF you're
-    viewing with Evince. Naturally, this only works if you're searching a
-    up-to-date version of your manuscript.
+        *   Vim cannot use `python-dbus' if compiled with both the Python 3 and
+            Python 2.x interpreters.
+        *   SyncTeX itself is broken in my TeXlive 2011 distribution. This bug
+            has been fixed (http://www.tug.org/pipermail/tex-live/2011-September/030170.html).
 
-    SyncTeX support should be considered experimental. Evince uses DBUS to
-    communicate with TeX 9 and therefore you need to have `python-dbus'
-    installed on your computer. The DBUS API has changed in Gnome 3 and so
-    this feature isn't available for Gnome 3 users. In addition, current
-    implementation does not support URI's with whitespaces or non-ASCII
-    characters.
+    We'll get back to SyncTeXing when the dust settles.
 
 ==============================================================================
 
 6.  Mappings                                        *tex_nine-mappings*
 
     <LocalLeader> is semi-colon by default. Change the value of
-    'maplocalleader' in `ftplugin/tex_nine.vim' to suit your taste.
+    'maplocalleader' in `ftplugin/TeX_9/tex_nine_common.vim' to suit your
+    taste.
 
 6.1 Insert mode >
 
@@ -275,7 +255,6 @@
 <
         Maths
         >
-
         <LocalLeader>N                      \nabla
         <LocalLeader>S                      \sum_{}^{}
         <LocalLeader>I                      \int\limits_{}^{}
@@ -312,19 +291,13 @@
         <LocalLeader>K                      Big compile
         <LocalLeader>V                      View the document
         <LocalLeader>Q                      View the quickfix window
-        <LocalLeader>U                      Update BibTeX database
+        <LocalLeader>U                      Update the BibTeX database(s)
 
-<
-6.3 Visual Mode
->
-        S                                   SyncTeX: Highlight current line
-                                            in the PDF you're writing.
-<
 6.4 Extras
 
-    The usual inner paragraph, 'ip', text object is revamped to handle
+    The usual inner paragraph, |ip|, text object is revamped to handle
     equations. Press 'vip' anywhere inside a maths environment to
-    highlight its contents. The outer paragraph alternative, 'ap' includes
+    highlight its contents. The outer paragraph alternative, |ap| includes
     the delimiting lines that contain `\\(begin|end)'. In addition, you
     may easily operate on in-line maths, e.g.  `$E=mc^{2}$', with the the
     text objects `i$' and `a$', inner and outer equation.
@@ -360,7 +333,7 @@
 <
         and map <F2> for instance to do the insertion in normal mode. >
                 
-                noremap <buffer> <F2> :call tex_nine#InsertTemplate(b:mytemp)<CR>
+                noremap <buffer> <F2> :call tex_nine#Insert_skeleton(b:mytemp)<CR>
 
 7.2     Extending TeX 9: Shortcuts for snippets
 
@@ -369,7 +342,7 @@
 
         An example for mapping <F1> to insert an equation snippet: >
                 
-                inoremap <buffer><expr> <F1> tex_nine#InsertEnvironment('equation')
+                inoremap <buffer><expr> <F1> tex_nine#Insert_snippet('equation')
 <
         If you come up with something sweet, please drop me a line (email
         address behind a reCAPTCHA in the README file.).
@@ -403,6 +376,18 @@
         With newer versions of Vim it's easy as >
 
                 let g:tex_fold_enabled = 1
+<
+7.6     Alternate command line switches 
+        
+        By default, TeX 9 compiles your document with the following command:
+>
+            g:tex_flavor -file-line-error -interaction=nonstopmode %
+<
+        If you need to specify some other switches on the fly, compile your
+        document with Vim's |make| command. An example when a LaTeX package
+        needs to call external applications:
+>
+            :silent make! -shell-escape %:p
 <
 
 ==============================================================================

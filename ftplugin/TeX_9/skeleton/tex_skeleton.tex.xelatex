@@ -1,0 +1,43 @@
+% vim:tw=66 sw=2 ft=tex
+%         File: ${_file}
+% Date Created: ${_date_created}
+%  Last Change: 2011 Sep 18
+%       Author: ${_author}
+\documentclass[12pt,a4paper,super]{article}
+\usepackage{amsmath, amssymb}
+\usepackage[version=3]{mhchem}
+\usepackage[no-math]{mathspec}
+\usepackage{polyglossia}
+\setdefaultlanguage{finnish}
+%\setmainfont{Cambria}
+%\setmathrm{Cambria}
+%\setmathfont(Digits,Latin,Greek){Cambria}
+\usepackage{siunitx}
+\usepackage{subfig, booktabs, natbib}
+\usepackage{esdiff, graphicx}
+\bibliographystyle{rsc}
+
+\sisetup{separate-uncertainty,
+         copy-decimal-marker}
+
+\parindent=0pt
+\parskip=4.5pt
+
+\begin{document}
+
+\bibliography{your_database}
+
+\end{document}
+
+% When in need
+% \usepackage{hyperref}
+% \usepackage{supertabular}
+% \usepackage{url}
+% \usepackage{mathrsfs}
+
+% Syntax tips
+% –––––––––––
+% Use \ContinuedFloat to continue subfloats beyond one page
+% Use \renewcommand{\figurename}{Diagram} to name Figs to
+% Diagrams.
+% Use \tabular{SSS} to align tables with SI recommendations

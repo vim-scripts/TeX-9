@@ -2,16 +2,15 @@
 " Compiler:     TeX and friends
 " Last Change:  June 22, 2011
 
+" This compiler file doesn't differ that much from the vanilla system file.
+" Sophisticated features are bound to autocommands QuickFixCmdPre and
+" QuickFixCmdPost. Namely, all invalid errormessages are filtered from
+" quickfix list unless `g:tex_verbose' is 1.
+
 let s:cpo_save = &cpo
 set cpo-=C
 
 let current_compiler = 'tex_nine'
-" This compiler file doesn't differ that much
-" from the vanilla system file. We bind all
-" sophisticated features to autocommands
-" QuickFixCmdPre and QuickFixCmdPost. Namely,
-" all invalid errormessages are filtered from
-" quickfix list unless `g:tex_verbose' is 1.
 
 " Value errorformat are taken from vim help, see :help errorformat-LaTeX, with
 " addition from Srinath Avadhanula <srinath@fastmail.fm>
@@ -46,17 +45,16 @@ CompilerSet errorformat=%E!\ LaTeX\ %trror:\ %m,
 	\%+Q[%\\d%*[^()])%r
 
 CompilerSet makeprg=
-if exists('g:tex_flavor')
-    let &makeprg=g:tex_flavor.' -file-line-error -interaction=nonstopmode'
-else
-    let &makeprg='latex -file-line-error -interaction=nonstopmode'
-endif
+let s:args = ' -file-line-error -interaction=nonstopmode'
 
-if exists('g:tex_synctex') && g:tex_synctex
-    let &makeprg.=' -synctex=1'
-endif
+let &l:makeprg = exists('g:tex_flavor') ? g:tex_flavor : 'latex'
+let &l:makeprg .= s:args
 
-let &makeprg.=' %:t'
+"if exists('g:tex_synctex') && g:tex_synctex == 1
+"    let &l:makeprg .= ' -synctex=1'
+"endif
+
+let &l:makeprg .= ' $*'
 
 let &cpo = s:cpo_save
 unlet s:cpo_save

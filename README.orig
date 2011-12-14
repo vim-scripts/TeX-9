@@ -8,26 +8,24 @@
     Author:  Elias Toivanen 
     Email: http://www.google.com/recaptcha/mailhide/d?k=01zYGjcmroKw0SapWSzBKoIQ==&c=a4IzT40CjKv-Rc9xXg4HCrD2AUf-Ku8Qb77II5iVomQ=
     License: GPL
-    Version: 1.1.5
+    Version: 1.1.6
 
     TeX 9 is a ftplugin that enhances significantly the writing experience of
     high quality documents with LaTeX and Vim. The scope of TeX 9 is to rely
     first and foremost on features that are already available in Vim and try
-    to keep things as simple and snappy as possible. Indeed, TeX 9's codebase
-    is only about 600 SLOC. 
+    to keep things as simple and snappy as possible. 
     
     Most of TeX 9 is implemented in Python (2.6, 2.7) and therefore a Vim
     installation with Python support is required.  In addition, TeX 9 depends
-    on the matchit plugin (>= 1.13.2) by Benji Fisher.  Matchit is shipped with
+    on the matchit plugin (>= 1.13.2) by Benji Fisher. Matchit is shipped with
     the standard installation of Vim but it is also bundled with TeX 9 for
     convenience. 
 
     TeX 9's main features are
         * Compile, debug and view documents from within Vim
         * Insert LaTeX code snippets with ease
-        * Select-objects for inline maths and math environments
+        * Select-objects for inline maths and maths environments
         * Omni-completion of BibTeX database entries and label references
-        * SyncTeX support for Evince 2.32 (requires python-dbus)
         * Filetype specific indentation (courtesy of Johannes Tanzler)
         * LaTeX2e manual (ported to Vim by Mikolaj Machowski)
         * No-hassle settings, relatively few mappings

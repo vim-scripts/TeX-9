@@ -1,25 +1,38 @@
 1.1:
-    * SyncTeX support when using Evince (2.32)
+* SyncTeX support when using Evince (2.32)
 
-    - Doesn't support whitespaces or non-ASCII characters in filenames
+- Doesn't support whitespaces or non-ASCII characters in filenames
 
-    * Jump to a BibTeX database (gb) from the manuscript.
+* Jump to a BibTeX database (gb) from the manuscript.
 
-    - Looks at the <cword> variable under the cursor
+- Looks at the <cword> variable under the cursor
 
-    * Improved BibTeX handling: 
-    - Databases in the compilation directory take precedence.
+* Improved BibTeX handling: 
+- Databases in the compilation directory take precedence.
 
-    * Omnicompletion () of fonts and pictures.
+* Omnicompletion () of fonts and pictures.
 
-    - font completion works with fontspec command \setmainfont
-    - picture completion works inside \includegraphics command
-    - supported formats: png, jpg, eps and pdf
+- font completion works with fontspec command \setmainfont
+- picture completion works inside \includegraphics command
+- supported formats: png, jpg, eps and pdf
 
 
-    --Elias Toivanen, Thu 30 Jun 2011 11:44:50 PM EEST
+--Elias Toivanen, Thu 30 Jun 2011 11:44:50 PM EEST
 
 1.1.5:
-    * Fixed bugs related to omni-completion of fonts/pics
+* Fixed bugs related to omni-completion of fonts/pics
 
-    --Elias Toivanen, Sun 03 Jul 2011 05:16:10 PM EEST
+--Elias Toivanen, Sun 03 Jul 2011 05:16:10 PM EEST
+
+1.1.6:
+* The value of `makeprg' no longer interferes with other languages.
+* The autocommands QuickFixCmdPre and QuickFixCmdPost are now
+local to the LaTeX buffer for the same reason as above.
+* Snippets now work when you have a BibTeX and a LaTeX file simultaneously on the buffer
+list.
+* Code clean-up.
+* Improved error matching when an BibTeX entry is not found.
+* Made TeX 9 work in a terminal.
+* SyncTeX support dropped temporarily.
+
+--Elias Toivanen, Tue 13 Dec 2011 06:48:33 PM CET

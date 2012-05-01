@@ -8,21 +8,21 @@
 "               automatically.
 " Version: 0.02
 
-if exists("b:did_indent") | finish
-endif
-let b:did_indent = 1
-
-setlocal indentexpr=GetTeXIndent()
+setlocal indentexpr=TeXNineIndent()
 setlocal nolisp
 setlocal nosmartindent
 setlocal autoindent
 setlocal indentkeys+=},=\\item,=\\bibitem
 
+if exists("b:did_tex_nine_indent") | finish
+endif
+let b:did_tex_nine_indent = 1
+
 " Only define the function once
-if exists("*GetTeXIndent") | finish
+if exists("*TeXNineIndent") | finish
 endif
 
-function GetTeXIndent()
+function TeXNineIndent()
 
     " Find a non-blank line above the current line.
     let lnum = prevnonblank(v:lnum - 1)

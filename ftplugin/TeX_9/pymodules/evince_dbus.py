@@ -19,7 +19,14 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
 # Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import dbus, subprocess, time
+############################
+#
+# Modified for TeX 9
+# Elias Toivanen, 2012-04-19
+#
+############################
+
+import dbus
 
 RUNNING, CLOSED = range(2)
 
@@ -32,9 +39,7 @@ EVINCE_IFACE = "org.gnome.evince.Application"
 
 EV_WINDOW_IFACE = "org.gnome.evince.Window"
 
-
-
-class EvinceWindowProxy(object):
+class EvinceWindowProxy:
     """A DBUS proxy for an Evince Window."""
     daemon = None
     bus = None
@@ -132,56 +137,11 @@ class EvinceWindowProxy(object):
 
         if self.status == CLOSED: 
             return False
-        self.window.SyncView(self._tmp_syncview[0],self._tmp_syncview[1], self._tmp_syncview[2], dbus_interface="org.gnome.evince.Window")
+        self.window.SyncView(self._tmp_syncview[0],
+                             self._tmp_syncview[1],
+                             self._tmp_syncview[2],
+                             dbus_interface="org.gnome.evince.Window")
         del self._tmp_syncview
         self._handler = None
         return True
 
-## This file can be used as a script to support forward search and backward search in vim.
-## It should be easy to adapt to other editors. 
-##  evince_dbus  pdf_file  line_source input_file
-if __name__ == '__main__':
-    import dbus.mainloop.glib, sys, os, logging
-    from gi.repository import GObject
-
-    def print_usage():
-        print '''
-The usage is evince_dbus output_file line_number input_file from the directory of output_file.
-'''
-        sys.exit(1)
-
-    if len(sys.argv)!=4:
-        print_usage()
-    try:
-        line_number = int(sys.argv[2])
-    except ValueError:
-        print_usage()
-
-    output_file = sys.argv[1]
-    input_file  = sys.argv[3]
-    path_output  = os.getcwd() + '/' + output_file
-    path_input   = os.getcwd() + '/' + input_file
-
-    if not os.path.isfile(path_output):
-        print_usage()
-
-    dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
-    logger = logging.getLogger("evince_dbus")
-    logger.setLevel(logging.DEBUG)
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-    ch.setFormatter(formatter)
-
-    logger.addHandler(ch)    
-    a = EvinceWindowProxy('file://' + path_output, True,logger=logger)
-    
-    def sync_view(ev_window, path_input, line_number):
-        ev_window.SyncView (path_input, (line_number, 1),0)
-
-    GObject.timeout_add(400, sync_view, a, path_input, line_number)
-    loop = GObject.MainLoop()
-    loop.run() 
-# ex:ts=4:et:

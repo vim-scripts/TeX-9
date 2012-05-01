@@ -10,7 +10,7 @@
 * Improved BibTeX handling: 
 - Databases in the compilation directory take precedence.
 
-* Omnicompletion () of fonts and pictures.
+* Omni-completion () of fonts and pictures.
 
 - font completion works with fontspec command \setmainfont
 - picture completion works inside \includegraphics command
@@ -36,3 +36,19 @@ list.
 * SyncTeX support dropped temporarily.
 
 --Elias Toivanen, Tue 13 Dec 2011 06:48:33 PM CET
+
+1.2
+* The value of `maplocalleader' is not changed if defined already by the user.
+* Move the main Python module to a separate file.
+* SyncTeX support (Evince 3.4, latest SyncTeX).
+* Robust environment operator: no need for syntax or matchit.
+* TODO: inline maths operator.
+* Omnicompletion of maths.
+* Check included files for label completions.
+* Deprecate automatic delimiter completion: it should be a separate plugin.
+* TODO: make as g:tex_flavor.
+* Lazy-load BibTeX completions: speeds up startup
+* Handle complex LaTeX projects with multiple files gracefully: compilation,
+    viewer launching, SyncTeXing.
+
+--Elias Toivanen, Tue 01 May 2012 10:19:20 AM CEST

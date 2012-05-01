@@ -1,10 +1,11 @@
 " LaTeX filetype plugin
 " Languages:    LaTeX
 " Maintainer:   Elias Toivanen
-" Version:      1.1.6
-" Last Change:  Tue 13 Dec 2011 
+" Version:      1.2beta
+" Last Change:  
 " License:      GPL
 
+" LICENCE DISCLAIMER {{{1
 "************************************************************************
 "
 "    This program is free software: you can redistribute it and/or modify
@@ -20,55 +21,40 @@
 "    You should have received a copy of the GNU General Public License
 "    along with this program. If not, see <http://www.gnu.org/licenses/>.
 "                    
-"    Copyright Elias Toivanen, 2011
-"************************************************************************
-
-" See ``:help tex_nine'' for documentation and ``autoload/tex_nine.vim''
-" for the actual implementation.
+"    Copyright Elias Toivanen, 2012
+"*********************************************************************}}}
 
 if !has('python') 
-    echoerr "Error: TeX 9 requires Vim compiled with +python."
+    echoerr "TeX 9 Error: a Vim installation with +python is required"
     finish
 endif
 
-if exists('b:init_tex_nine') | finish
+if exists('b:init_tex_nine')
+    finish
 endif
 let b:init_tex_nine = 1
 
-" ******************************************
-"                Paths 
-" ******************************************
-let s:path = fnameescape(expand('<sfile>:h').'/TeX_9')
-let b:tex_skeleton = fnameescape(s:path.'/skeleton/tex_skeleton.tex')
-let b:tex_pymodules = fnameescape(s:path.'/pymodules')
-let s:tex_snippets = fnameescape(s:path.'/snippets/tex_snippets.snippets')
-let &dictionary = fnameescape(s:path.'/dictionaries/tex_dictionary.txt')
-"let b:tex_cwd = fnameescape(getcwd())
-"
-exe 'source' s:path.'/tex_nine_common.vim'
+" Paths & Python environment
+ru ftplugin/TeX_9/tex_nine_common.vim
 
-" ******************************************
-"               Settings
-" ******************************************
+" Local settings & autocmds {{{1
 setlocal completeopt=longest,menuone 
-setlocal tw=66 sw=2 " Edit to your taste
 setlocal fo=tcq
+setlocal tw=72 sw=2
 setlocal tabstop=8 
 setlocal notimeout 
+"setlocal whichwrap=b,s " For matching inline maths
 setlocal omnifunc=tex_nine#Omni_completion
 
-" ******************************************
-"             Autocommands
-" ******************************************
 augroup tex_nine
     au BufWritePre *.tex call tex_nine#Update_header()
     au QuickFixCmdPre <buffer> call tex_nine#Premake()
     au QuickFixCmdPost <buffer> call tex_nine#Postmake()
 augroup END
+" }}}
 
-" ******************************************
-"           User preferences 
-" ******************************************
+" User preferences {{{1
+
 if exists('g:tex_verbose') && g:tex_verbose == 1
     au! tex_nine QuickFixCmdPost 
     function! PostMake()
@@ -80,17 +66,6 @@ if exists('g:tex_verbose') && g:tex_verbose == 1
         unsilent echo "Found ".numerrors." Error(s)."
     endfunction
     au QuickFixCmdPost <buffer> call PostMake()
-endif
-
-if !exists('g:tex_cycle_delimeters')
-    let g:tex_cycle_delimeters = 1
-endif
-
-if g:tex_cycle_delimeters == 1
-    inoremap <buffer><expr> { tex_nine#Cycle('{')
-    inoremap <buffer><expr> [ tex_nine#Cycle('[')
-    inoremap <buffer><expr> ( tex_nine#Cycle('(')
-    inoremap <buffer><expr> $ tex_nine#Cycle('$') 
 endif
 
 if exists('g:tex_flavor')
@@ -110,21 +85,34 @@ if !exists('g:tex_bibfiles')
     let g:tex_bibfiles = []
 endif
 
-"if exists('g:tex_synctex') && g:tex_synctex == 1
-"    python import vim
-"    python sys.path.extend([vim.eval('b:tex_pymodules')])
-"    exe 'pyfile' s:path.'/pymodules/synctex.py'
-"endif
+python << EOF
+omni = TeXNineOmni(vim.eval('g:tex_bibfiles'))
+document = TeXNineDocument(vim.current.buffer,
+                           compiler=vim.eval('g:tex_flavor'),
+                           viewer=vim.eval('g:tex_viewer'))
+document.setup_snippets(vim.eval('b:tex_snippets'),
+                        vim.eval('&ft'))
+EOF
 
-call tex_nine#Add_buffer()
-call tex_nine#Setup_omni(g:tex_bibfiles, 0)
-call tex_nine#Setup_snippets(s:tex_snippets)
+if exists('g:tex_synctex') && g:tex_synctex == 1
+   if !has('python3') 
+python << EOF
+target = document.viewer['target']
+evince_proxy = tex_nine_synctex.TeXNineSyncTeX(vim.current, target) 
+document.set_forward_search(vim.current.buffer, evince_proxy)
+EOF
+    noremap <buffer><silent> <C-LeftMouse> :python document.forward_search(vim.current)<CR>
+   endif
+endif
 
+"}}}
+
+" Mappings {{{1
 " ******************************************
 "          Normal mode mappings
 " ******************************************
 noremap <buffer><silent> <F1> :call tex_nine#Insert_skeleton(b:tex_skeleton)<CR>
-noremap <buffer><silent> <LocalLeader>V :call tex_nine#View_document(g:tex_viewer)<CR><CR>
+noremap <buffer><silent> <LocalLeader>V :call tex_nine#View_document()<CR>
 noremap <buffer><silent> <LocalLeader>U :call tex_nine#Setup_omni(g:tex_bibfiles, 1)<CR>
 noremap <buffer><silent> <LocalLeader>Q :copen<CR>
 noremap <buffer><silent> <C-B> ?\\begin\\|\\end<CR>
@@ -132,11 +120,14 @@ noremap <buffer><silent> <C-F> /\\end\\|\\begin<CR>
 noremap <buffer><silent> gd yiB/\\label{<C-R>0}<CR>
 noremap <buffer><silent> gb :call tex_nine#Bibquery(expand('<cword>'))<CR>
 
+
 " ******************************************
 "          Insert mode mappings
 " ******************************************
+
 inoremap <buffer> <LocalLeader><LocalLeader> <LocalLeader>
 inoremap <buffer> <LocalLeader>K 
+inoremap <buffer> <LocalLeader>M \
 inoremap <buffer><expr> <LocalLeader>B tex_nine#Insert_snippet()
 imap <buffer><expr> <LocalLeader>R tex_nine#Smart_insert('\ref{')
 imap <buffer><expr> <LocalLeader>C tex_nine#Smart_insert('\cite{', '\[cC]ite')
@@ -210,16 +201,14 @@ inoremap <buffer><expr> ^ tex_nine#IsLeft('^') ? '{}<Left>' : '^'
 inoremap <buffer><expr> = tex_nine#IsLeft('=') ? '<BS>&=' : '='
 inoremap <buffer><expr> ~ tex_nine#IsLeft('~') ? '<BS>\approx' : '~'
 
-" LaTeX aware text objects
-vnoremap <buffer><expr> i$ tex_nine#EquationObject('inner')
-vnoremap <buffer><expr> a$ tex_nine#EquationObject('outer')
-omap <buffer><silent> i$ :normal vi$<CR>
-omap <buffer><silent> a$ :normal va$<CR>
+" Robust inner/outer environment operators
+vmap <buffer><expr> ae tex_nine#Environment_operator('outer')
+omap <buffer><silent> ae :normal vae<CR>
+vmap <buffer><expr> ie tex_nine#Environment_operator('inner')
+omap <buffer><silent> ie :normal vie<CR>
 
-if exists('loaded_matchit')
-    vmap <buffer><expr> ip tex_nine#TeXParagraph('inner')
-    vmap <buffer><expr> ap tex_nine#TeXParagraph('outer')
-    omap <buffer><silent> ip :normal vip<CR>
-    omap <buffer><silent> ap :normal vap<CR>
-endif
+" }}}
 
+"let b:tex_cwd = fnameescape(getcwd())
+
+" vim: ft=vim fdm=marker

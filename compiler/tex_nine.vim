@@ -50,9 +50,9 @@ let s:args = ' -file-line-error -interaction=nonstopmode'
 let &l:makeprg = exists('g:tex_flavor') ? g:tex_flavor : 'latex'
 let &l:makeprg .= s:args
 
-"if exists('g:tex_synctex') && g:tex_synctex == 1
-"    let &l:makeprg .= ' -synctex=1'
-"endif
+if exists('g:tex_synctex') && g:tex_synctex == 1
+    let &l:makeprg .= ' -synctex=1'
+endif
 
 let &l:makeprg .= ' $*'
 

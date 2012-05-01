@@ -1,27 +1,29 @@
 This is a mirror of http://www.vim.org/scripts/script.php?script_id=3508
 
-TeX 9                                   
+TeX 9
+                       
+    Author: Elias Toivanen 
+    License: GPL
+    Version: 1.2
 
-    Author:  Elias Toivanen 
-    License: GPL 
-    Version: 1.1.6
-
-    TeX 9 is a ftplugin that enhances significantly the writing experience of
-    high quality documents with LaTeX and Vim. The scope of TeX 9 is to rely
-    first and foremost on features that are already available in Vim and try
-    to keep things as simple and snappy as possible. 
+    TeX 9 is a ftplugin that aims to enhance the writing experience of high
+    quality documents with LaTeX and Vim. The goal of TeX 9 is to be simple
+    and Vimish, meaning that focus is on carefully thought-out key mappings
+    and features that are already present in a typical Vim installation. If
+    you need to write a thesis or research articles and insist on having only
+    one editor for all editing tasks, then TeX 9 is for you!
     
-    Most of TeX 9 is implemented in Python (2.6, 2.7) and therefore a Vim
-    installation with Python support is required.  In addition, TeX 9 depends
-    on the matchit plugin (>= 1.13.2) by Benji Fisher. Matchit is shipped with
-    the standard installation of Vim but it is also bundled with TeX 9 for
-    convenience. 
+    TeX 9 uses Python2.x as its backend and therefore a Vim installation with
+    Python support is required. TeX 9 is being developed on Arch Linux running
+    Vim 7.3.
 
-    TeX 9's main features are
-        * Compile, debug and view documents from within Vim
+     The main features of TeX 9 are
+        * Compile, debug and launch a document viewer from within Vim
         * Insert LaTeX code snippets with ease
-        * Select-objects for inline maths and maths environments
+        * Powerful text-object for LaTeX environments 
         * Omni-completion of BibTeX database entries and label references
+        * Omni-completion of mathematical symbols
+        * SyncTeX support (only with the Evince document viewer)
         * Filetype specific indentation (courtesy of Johannes Tanzler)
         * LaTeX2e manual (ported to Vim by Mikolaj Machowski)
         * No-hassle settings, relatively few mappings
@@ -31,5 +33,5 @@ TeX 9
         * Vim-LaTeX people Srinath Avadhanula, Mikolaj Machowski and Benji Fisher
         * Johannes Tanzler, Jose Aliste, Sergio Losilla
 
-============================================================================== 
+==============================================================================
 

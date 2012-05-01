@@ -1,8 +1,8 @@
 " LaTeX filetype plugin: BibTeX settings
 " Language:     BibTeX (ft=bib)
 " Maintainer:   Elias Toivanen
-" Version:	1.1.6
-" Last Change:	Tue 13 Dec 2011 
+" Version:	1.2beta
+" Last Change:	
 " Licence:      GPL
 
 "************************************************************************
@@ -20,16 +20,11 @@
 "    You should have received a copy of the GNU General Public License
 "    along with this program. If not, see <http://www.gnu.org/licenses/>.
 "                    
-"    Copyright Elias Toivanen, 2011
+"    Copyright Elias Toivanen, 2012
 "************************************************************************
 
-" ******************************************
-"                 Paths
-" ******************************************
-let s:path = fnameescape(expand('<sfile>:h').'/TeX_9')
-let s:bib_snippets = fnameescape(s:path.'/snippets/bib_snippets.snippets')
-
-exe 'source' s:path.'/tex_nine_common.vim'
+" Paths & Python environment
+ru ftplugin/TeX_9/tex_nine_common.vim
 
 " ******************************************
 "               Variables
@@ -38,14 +33,16 @@ setlocal tw=0
 setlocal sts=2
 setlocal sw=2
 setlocal tabstop=8
-let &dictionary = fnameescape(s:path.'/dictionaries/tex_dictionary.txt')
 
 if !exists('g:tex_bibfiles')
     let g:tex_bibfiles = []
 endif
 
-call tex_nine#Add_buffer()
-call tex_nine#Setup_snippets(s:bib_snippets)
+python << EOF
+document = TeXNineDocument(vim.current.buffer)
+document.setup_snippets(vim.eval('b:bib_snippets'),
+                        vim.eval('&ft'))
+EOF
 
 inoremap <buffer><expr> <LocalLeader>B tex_nine#Insert_snippet()
 noremap <buffer><silent> <LocalLeader>U :call tex_nine#Setup_omni(g:tex_bibfiles, 1)<CR>

@@ -16,7 +16,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #                    
-#    Copyright Elias Toivanen, 2012
+#    Copyright Elias Toivanen, 2011, 2012
 #
 #************************************************************************
 
@@ -86,8 +86,11 @@ def get_latex_environment(vim_window):
 
     return {'environment': environment, 'range': (begin, end)}
 
-def is_latex_math_environment(vim_window):
-    math_environments = re.compile(r"matrix|cases|math|equation|align|array")
+def is_latex_math_environment(vim_window,
+                              environments = re.compile(r"matrix|cases|math|equation|align|array")):
+    """Returns True if the cursor is currently on a maths environment."""
     e = get_latex_environment(vim_window)
-    return  bool(math_environments.search(e['environment']))
+    return  bool(environments.search(e['environment']))
 
+class TeXNineError(Exception):
+    pass

@@ -1,7 +1,7 @@
 " LaTeX filetype plugin
 " Languages:    LaTeX
 " Maintainer:   Elias Toivanen
-" Version:      1.2beta
+" Version:      1.2.1
 " Last Change:  
 " License:      GPL
 
@@ -101,7 +101,7 @@ target = document.viewer['target']
 evince_proxy = tex_nine_synctex.TeXNineSyncTeX(vim.current, target) 
 document.set_forward_search(vim.current.buffer, evince_proxy)
 EOF
-    noremap <buffer><silent> <C-LeftMouse> :python document.forward_search(vim.current)<CR>
+    noremap <buffer><silent> <C-LeftMouse> :call tex_nine#Forward_search()<CR>
    endif
 endif
 
@@ -168,6 +168,7 @@ inoremap <buffer> <LocalLeader>X \Xi
 inoremap <buffer> <LocalLeader>Y \Psi
 
 " Math
+inoremap <buffer> <LocalLeader>½ \sqrt{}<Left>
 inoremap <buffer> <LocalLeader>N \nabla
 inoremap <buffer> <LocalLeader>S \sum_{}^{}<Esc>F}i
 inoremap <buffer> <LocalLeader>I \int\limits_{}^{}<Esc>F}i

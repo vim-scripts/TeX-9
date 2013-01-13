@@ -1,7 +1,7 @@
 " LaTeX filetype plugin: Common settings
 " Language:     LaTeX (ft=tex), BibTeX (ft=bib)
 " Maintainer:   Elias Toivanen
-" Version:	1.2beta
+" Version:	1.2.1
 " Last Change:	
 " Licence:      GPL
 
@@ -20,7 +20,7 @@
 "    You should have received a copy of the GNU General Public License
 "    along with this program. If not, see <http://www.gnu.org/licenses/>.
 "                    
-"    Copyright Elias Toivanen, 2012
+"    Copyright Elias Toivanen, 2011, 2012
 "************************************************************************
 
 let s:path = fnameescape(expand('<sfile>:h'))

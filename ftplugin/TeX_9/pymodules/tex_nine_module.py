@@ -16,11 +16,11 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #                    
-#    Copyright Elias Toivanen, 2012
+#    Copyright Elias Toivanen, 2011, 2012
 #
 #************************************************************************
 
-# Short summary of module:
+# Short summary of the module:
 #
 # Defines two main objects TeXNineDocument and TeXNineOmni that are
 # meant to handle editing and completion tasks. Both of these classes
@@ -31,11 +31,10 @@ import re
 import subprocess
 import os
 import sys
-import time
-import operator
 import logging
 
 from getpass import getuser
+from time import strftime
 from itertools import groupby
 from string import Template
 
@@ -47,21 +46,28 @@ logging.debug("TeX 9: Entering the Python module")
 sys.path.extend([vim.eval('b:tex_pymodules')])
 
 from tex_nine_symbols import tex_nine_maths_cache
-from tex_nine_utils import *
+import tex_nine_utils as utils
 
 class TeXNineBase(object):
-    """Singleton class with reporting methods."""
+    """Singleton base class for TeX 9.
+    
+    * Handles error reporting 
+    * Finds the master file in a multi-file LaTeX project  
+
+    """
 
     _instance = None
 
     messages = {
-        'NO_BIBTEX': 'No BibTeX databases present...',
-        'UPDATING_ENTRIES' : 'Updating BibTeX entries...',
-        'INVALID_BIBFILE': 'Invalid BibTeX file: `{0}\'',
-        'INVALID_BIBENTRY_TYPE': 'No such BibTeX entry type: `{0}\'',
-        'INVALID_BIBENTRY': 'Following BibTeX entries are undefined: {0}', 
-        'INVALID_MODELINE': 'Cannot find master file `{0}\'',
-        'NO_MODELINE':  'Cannot find master file: modeline not found'
+
+    'NO_BIBTEX': 'No BibTeX databases present...',
+    'UPDATING_ENTRIES' : 'Updating BibTeX entries...',
+    'INVALID_BIBFILE': 'Invalid BibTeX file: `{0}\'',
+    'INVALID_BIBENTRY_TYPE': 'No such BibTeX entry type: `{0}\'',
+    'INVALID_BIBENTRY': 'Following BibTeX entries are undefined: {0}', 
+    'INVALID_MODELINE': 'Cannot find master file `{0}\'',
+    'NO_MODELINE':  r'Cannot find master file: no modeline or \\documentclass statement'
+
     }
 
     def __new__(self, *args, **kwargs):
@@ -75,6 +81,73 @@ class TeXNineBase(object):
 
     def echomsg(self, msgstr):
         vim.command('echomsg "{0}"'.format(msgstr))
+
+    def find_master_file(self, vimbuffer, nlines=3):
+        """Finds the filename of the master file in a LaTeX project.
+
+        Checks if `fname' contains a \documentclass statement and sets
+        the master file to fname itself. Otherwise checks the
+        `nlines' first and `nlines' last lines for modeline of the form
+
+        % mainfile: <master_file>
+
+        where <master_file> is the path of the master file relative to
+        `fname', e.g. ../main.tex.
+
+        """
+        this_file = vimbuffer[:] 
+
+        if re.search(r'^\\documentclass', "\n".join(this_file), re.M):
+            self.buffers[vimbuffer.name]['master'] = vimbuffer.name
+            return
+
+        try:
+            modeline = "\n".join(this_file[:nlines]+this_file[-nlines:])
+            match = re.search(r'^\s*%\s*mainfile:\s*(\S+)', modeline, re.M)
+            if match:
+                master_file = os.path.join(os.path.dirname(vimbuffer.name),
+                                           match.group(1))
+                master_file = os.path.abspath(master_file)
+                if os.path.exists(master_file):
+                    self.buffers[vimbuffer.name]['master'] = master_file
+                    return
+                else:
+                    self.buffers[vimbuffer.name]['master'] = None
+                    e = self.messages['INVALID_MODELINE'].format(match.group(1)) 
+                    raise utils.TeXNineError(e)
+
+            # There were enough lines but no match
+            self.buffers[vimbuffer.name]['master'] = None
+
+        except IndexError:
+            # not enough text in the buffer, try searching later
+            self.buffers[vimbuffer.name]['master'] = None
+
+    def get_master_file(self, vimbuffer):
+        """Fetches the filename of the master file in a LaTeX project."""
+        if self.buffers[vimbuffer.name]['master'] is None:
+            self.find_master_file(vimbuffer)
+        return self.buffers[vimbuffer.name]['master']
+
+    @staticmethod
+    def multi_file(f):
+        """Decorates methods that need to know the actual master file in
+        a multi-file project."""
+        def new_f(self, master_file, *args, **kwargs):
+
+            try:
+
+                master_file = self.get_master_file(vim.current.buffer)
+                if master_file is None:
+                    raise utils.TeXNineError(self.messages['NO_MODELINE'])
+                else:
+                    return f(self, master_file, *args, **kwargs)
+
+            except utils.TeXNineError, e:
+                self.echoerr(e)
+                return
+
+        return new_f
 
 class TeXNineBibTeX(TeXNineBase):
     """A class to gather BibTeX entries in a list."""
@@ -91,7 +164,7 @@ class TeXNineBibTeX(TeXNineBase):
         try:
             with open(fname) as f:
                 logging.debug("TeX 9: Reading BibTeX entries from `{0}'".format(os.path.basename(fname)))
-                return re.findall('^@\w+ ?{([^, ]+) *,', f.read(), re.M)
+                return re.findall('^@\w+ *{([^, ]+) *,', f.read(), re.M)
 
         except IOError:
             self.echoerr(self.messages["INVALID_BIBFILE"].format(fname))
@@ -168,9 +241,8 @@ class TeXNineOmni(TeXNineBibTeX):
     def __init__(self, bibfiles=[]):
         TeXNineBibTeX.__init__(self, bibfiles)
         self.keyword = None
-        self.complete_maths = False
 
-    def _labels(self):
+    def _labels(self, text, fname):
         """Labels for references.
 
         Searches \label{} statements in the current file and files that
@@ -179,31 +251,40 @@ class TeXNineOmni(TeXNineBibTeX):
         "special" characters such as whitespace.
         """
 
-        vim.command('update')
-        pat = re.compile(r'\\label{([^,}]+)}')
         labels = []
-        this_file = "\n".join(vim.current.buffer[:])
+        included = set([])
 
-        labels += pat.findall(this_file)
-        include_files = re.findall(r'\\in(?:clude|put){([^}]+)}', this_file)
+        vim.command('update')
+        cwd, basename = os.path.split(fname)
 
-        if include_files:
-            include_files = set(include_files)
-            cwd, basename = os.path.split(vim.current.buffer.name)
-            for fname in include_files:
+        pat = re.compile(r'\\label{(?P<label>[^,}]+)}|\\in(?:clude|put){(?P<fname>[^}]+)}')
+
+        for m in pat.finditer(text):
+            if m.group('label'):
+                labels.append({'word': m.group('label'), 'menu': basename})
+                continue
+
+            elif m.group('fname'):
+                fname = m.group('fname')
                 if not fname.endswith('.tex'):
                     fname += '.tex'
-                try:
-                    logging.debug("TeX 9: Reading `{0}'".format(fname))
-                    with open(os.path.join(cwd,fname), 'r') as f:
-                        labels += pat.findall(f.read())
-                except IOError, e:
-                    logging.debug(str(e).decode('string-escape'))
+                included.add(os.path.join(cwd, fname))
+
+        for fname in included:
+            try:
+                logging.debug("TeX 9: Reading `{0}'".format(fname))
+                with open(fname, 'r') as f:
+                    labels += self._labels(f.read(), fname)
+            except IOError, e:
+                logging.debug(str(e).decode('string-escape'))
 
         return labels
 
     def _fonts(self):
-        """Installed fonts."""
+        """Installed fonts.
+        
+        WARNING: Linux only
+        """
         proc = subprocess.Popen('fc-list',
                                 stdout=subprocess.PIPE)
         output = proc.communicate()[0].splitlines()
@@ -239,8 +320,7 @@ class TeXNineOmni(TeXNineBibTeX):
         try:
             # Starting at a backslash and there is no keyword.
             if '\\' in line[col - 1:col]: 
-                self.complete_maths = True
-                self.keyword = ' '
+                self.keyword = ""
             else:
                 # There can be a keyword: grab it! 
                 self.keyword = pat.findall(line)[-1]
@@ -266,21 +346,20 @@ class TeXNineOmni(TeXNineBibTeX):
         compl = []
 
         # Select completion based on keyword
-        if self.keyword:
+        if self.keyword is not None:
             # Natbib has \Cite.* type of of commands
-            if ('cite' in self.keyword or 'Cite' in self.keyword) and self.get_bibentries(): 
+            if 'cite' in self.keyword or 'Cite' in self.keyword: 
                 compl = self.get_bibentries()
             elif 'ref' in self.keyword:
-                compl = self._labels()
+                compl = self._labels("\n".join(vim.current.buffer), vim.current.buffer.name)
             elif 'font' in self.keyword or 'setmath' in self.keyword:
                 compl = self._fonts()
             elif 'includegraphics' in self.keyword:
                 compl = self._pics()
-            elif is_latex_math_environment(vim.current.window): 
+            elif utils.is_latex_math_environment(vim.current.window): 
                 logging.debug('TeX 9: Found a LaTeX maths environment')
-                if self.complete_maths:
+                if not self.keyword:
                     compl = tex_nine_maths_cache
-                    self.complete_maths = False
                 else:
                     compl = [ c for c in tex_nine_maths_cache if
                              c['word'].startswith(self.keyword) ]
@@ -293,16 +372,16 @@ class TeXNineSnippets(object):
     """
     _snippets = {'tex': {}, 'bib': {}}
 
-    def __init__(self):
-        self._lstripper = operator.methodcaller('lstrip', ' ')
-        self._commentstripper = lambda x: '#' not in x
-
     def _parser(self, string):
-        lines = string.splitlines(True) # preserve carriage returns
+        """Returns a 2-tuple with the snippet keyword and corresponding
+        snippet content."""
+
+        # String to list, preserving carriage returns
+        lines = string.splitlines(True) 
 
         # Format the snippet 
-        lines = filter(self._commentstripper,
-                map(self._lstripper, lines))
+        lines = [ line.lstrip(' ') for line in lines if
+                 '#' not in line ]
 
         if lines:
             snippet = "".join(lines[1:]).rstrip('\n')
@@ -325,11 +404,11 @@ class TeXNineSnippets(object):
 
         logging.debug("TeX 9: Reading snippets from `{0}'".format(os.path.basename(fname)))
         with open(fname) as snipfile:
-            # Trailing empty lines
+
+            # Strip trailing empty lines
             snippets = snipfile.read().rstrip('\n').split('snippet')
             snippets = map(self._parser, snippets)
-            # Remove comments 
-            snippets = filter(None, snippets)
+            snippets = filter(None, snippets) # Remove comments
 
             self._snippets[ft] = dict(snippets)
 
@@ -378,10 +457,13 @@ class TeXNineDocument(TeXNineBase, TeXNineSnippets):
     * Preview the definition of a BibTeX entry based on its keyword
     * Insert LaTeX/BibTeX code snippets
     * Send current cursor position to an Evince window for highligting
+
+    Methods that are decorated with TeXNineBase.multi_file are designed
+    to also work in multi-file LaTeX projects.
     
     """
 
-    def __init__(self, vim_buffer, 
+    def __init__(self, vimbuffer, 
                  compiler="", viewer={}, label='%  Last Change:', timestr='%Y %b %d'):
 
         TeXNineSnippets.__init__(self)
@@ -394,163 +476,93 @@ class TeXNineDocument(TeXNineBase, TeXNineSnippets):
 
         self.label = label
         self.timestr = timestr
-        self.buffers[vim_buffer.name] = {
+        self.buffers[vimbuffer.name] = {
             
             # Buffer is not always accessible. Vim bug?
-            'buffer': vim_buffer,
+            'buffer': vimbuffer,
             'ft': vim.eval('&ft'),
             'synctex': None,
             'master': None
         }
 
-    def set_forward_search(self, vim_buffer, evince_proxy):
-        """Connects vim_buffer to an Evince window via a proxy."""
-        self.buffers[vim_buffer.name]['synctex'] = evince_proxy
+    def set_forward_search(self, vimbuffer, evince_proxy):
+        """Connects vimbuffer to an Evince window via a proxy."""
+        self.buffers[vimbuffer.name]['synctex'] = evince_proxy
 
-    def forward_search(self, vim_current):
+    @TeXNineBase.multi_file
+    def forward_search(self, fname, vimcurrent):
         """Highligts current cursor position in Evince."""
 
-        try:
-            master_file = self.get_master_file(vim_current.buffer)
-            s = self.buffers[master_file]['synctex']
-            if s is not None: 
-                syncstr = "TeX 9: master={0}, row={1[0]}, col={1[1]}" 
-                logging.debug(syncstr.format(master_file,
-                                             vim_current.window.cursor))
-                s.forward_search(vim_current.buffer.name, vim_current.window.cursor)
-        except OSError, e:
-            # Handles invalid modelines
-            self.echoerr(e)
-            return
-        except KeyError:
-            # Handles missing modelines
-            self.echoerr(self.messages['NO_MODELINE'])
+        s = self.buffers[fname]['synctex']
+        if s is not None: 
+            syncstr = "TeX 9: master={0}, row={1[0]}, col={1[1]}" 
+            logging.debug(syncstr.format(fname,
+                                         vimcurrent.window.cursor))
+            s.forward_search(vimcurrent.buffer.name, vimcurrent.window.cursor)
             return
 
-    def find_master_file(self, vim_buffer, nlines=3):
-        """Finds the filename of the master file in a LaTeX project.
-
-        Checks if `fname' contains a \documentclass statement and sets
-        the master file to fname itself. Otherwise checks the
-        `nlines' first and `nlines' last lines for modeline of the form
-
-        % mainfile: <master_file>
-
-        where <master_file> is the path of the master file relative to
-        `fname', e.g. ../main.tex.
-
-        """
-        this_file = vim_buffer[:] 
-
-        if re.search(r'^\\documentclass', "\n".join(this_file), re.M):
-            self.buffers[vim_buffer.name]['master'] = vim_buffer.name
-            return
-
-        try:
-            modeline = "\n".join(this_file[:nlines]+this_file[-nlines:])
-            match = re.search(r'^\s*%\s*mainfile:\s*(\S+)', modeline, re.M)
-            if match:
-                master_file = os.path.join(os.path.dirname(vim_buffer.name),
-                                           match.group(1))
-                master_file = os.path.abspath(master_file)
-                if os.path.exists(master_file):
-                    self.buffers[vim_buffer.name]['master'] = master_file
-                    return
-                else:
-                    self.buffers[vim_buffer.name]['master'] = None
-                    raise OSError(self.messages['INVALID_MODELINE'].format(match.group(1)))
-
-            # There were enough lines but no match
-            self.buffers[vim_buffer.name]['master'] = None
-
-        except IndexError:
-            # not enough text in the buffer, try searching later
-            self.buffers[vim_buffer.name]['master'] = None
-
-    def get_master_file(self, vim_buffer):
-        """Fetches the filename of the master file in a LaTeX project."""
-        if self.buffers[vim_buffer.name]['master'] is None:
-            self.find_master_file(vim_buffer)
-        return self.buffers[vim_buffer.name]['master']
-
-    def compile(self, vim_buffer, quick=False):
+    @TeXNineBase.multi_file
+    def compile(self, fname, quick=False):
         """Compiles the current LaTeX manuscript.
 
         Vim's `make' command is only called once to avoid overhead that
         might result from additional processing routines.
         """
 
-        try:
+        cwd, basename = os.path.split(fname)
 
-            fname = self.get_master_file(vim_buffer)
+        if not quick:
+            tex_cmd = [self.compiler,
+                       '-output-directory='+cwd,
+                       '-interaction=batchmode',
+                       fname]
+            bib_cmd = ['bibtex', basename[:-len('.tex')]+'.aux']
+            kwargs = {'stdout': subprocess.PIPE, 'cwd': cwd}
 
-            if fname is None: 
-                raise OSError(self.messages['NO_MODELINE'])
+            subprocess.Popen(tex_cmd, **kwargs).wait()
+            stdout, stderr = subprocess.Popen(bib_cmd, **kwargs).communicate() 
+            matches = re.findall('I didn.t find a database entry for .(\S+).', stdout)
 
-            cwd, basename = os.path.split(fname)
+            # BibTeX does not report the location where the undefined entries are :-(
+            if matches:
+                e = ", ".join(matches)
+                e = self.messages['INVALID_BIBENTRY'].format(e)
+                raise utils.TeXNineError(e)
+            subprocess.Popen(tex_cmd, **kwargs).wait()
 
-            if not quick:
-                tex_cmd = [self.compiler,
-                           '-output-directory='+cwd,
-                           '-interaction=batchmode',
-                           fname]
-                bib_cmd = ['bibtex', basename[:-len('.tex')]+'.aux']
-                kwargs = {'stdout': subprocess.PIPE, 'cwd': cwd}
+        # Create quickfix list 
+        # NB: SyncTeX requires full and escaped path
+        vim.command('silent make! {0}'.format(fname.replace(' ','\ ')))
 
-                subprocess.Popen(tex_cmd, **kwargs).wait()
-                stdout, stderr = subprocess.Popen(bib_cmd, **kwargs).communicate() 
-                matches = re.findall('I didn.t find a database entry for .(\S+).', stdout)
-                # BibTeX does not report the location where the undefined entries are :-(
-                if matches:
-                    e = ", ".join(matches)
-                    e = self.messages['INVALID_BIBENTRY'].format(e)
-                    raise OSError(e)
-                subprocess.Popen(tex_cmd, **kwargs).wait()
-
-            # Create quickfix list 
-            # NB: SyncTeX requires full and escaped path
-            vim.command('silent make! {0}'.format(fname.replace(' ','\ ')))
-
-        except OSError, e:
-            self.echoerr(e)
-
-    def view(self, vim_buffer):
+    @TeXNineBase.multi_file
+    def view(self, fname):
         """Launches the viewer application.
 
         The process is started in the background by the system shell.
+
+        WARNING: *NIX only
         """
 
-        try:
-            fname = self.get_master_file(vim_buffer)
-            cmd = '{0[app]} "{1}.{0[target]}" &'.format(self.viewer,
-                                                        fname[:-len('.tex')])
-            subprocess.call(cmd, shell=True)
-        except OSError, e:
-            self.echoerr(e)
-        except TypeError:
-            self.echoerr(self.messages['NO_MODELINE'])
+        cmdstr = '{0[app]} "{1}.{0[target]}" &' 
+        cmd = cmdstr.format(self.viewer, fname[:-len('.tex')])
+        subprocess.call(cmd, shell=True)
 
     def postmake(self):
         """Filters invalid and irrelevant error messages that LaTeX
         compilers produce. Relies on Vim's Quickfix mechanism."""
 
-        valid = operator.itemgetter('valid')
-        qflist = vim.eval('getqflist()')
-        qflist.sort(key=valid)
-
         ignored = ['Overfull', 
                    'Underfull'] # Hack to your taste
 
-        # Invalid errors
-        for key, items in groupby(qflist, valid):
-            if int(key):
-                # Irrelevant errors
-                qflist = list(err for err in items
-                              if all( i not in err['text'] for i in ignored))
-                vim.command('call setqflist({0})'.format(qflist))
-                return 
+        # Only valid errors
+        qflist = ( entry for entry in vim.eval('getqflist()') if
+                  int(entry['valid']) )
 
-        vim.command('call setqflist({0})'.format([]))
+        # Remove some irrelevant "errors"
+        qflist = [ entry for entry in qflist if 
+                  all( i not in entry['text'] for i in ignored) ]
+
+        vim.command('call setqflist({0})'.format(qflist))
 
     def insert_skeleton(self, skeleton_file, vimbuffer):
         """Insert a skeleton of a LaTeX manuscript."""
@@ -558,7 +570,7 @@ class TeXNineDocument(TeXNineBase, TeXNineSnippets):
         with open(skeleton_file) as skeleton:
             template = Template(skeleton.read())
             skeleton = template.safe_substitute(_file = os.path.basename(vimbuffer.name),
-                                                _date_created = time.strftime(self.timestr),
+                                                _date_created = strftime(self.timestr),
                                                 _author = getuser())
 
             vimbuffer[:] = skeleton.splitlines(True)
@@ -566,7 +578,7 @@ class TeXNineDocument(TeXNineBase, TeXNineSnippets):
     def update_header(self, vimbuffer):
         """Updates the date label in the header."""
 
-        date = time.strftime(self.timestr)
+        date = strftime(self.timestr)
         if len(vimbuffer) >= 10 and int(vim.eval('&modifiable')):
             for i in range(10):
                 if self.label in str(vimbuffer[i]) and date not in str(vimbuffer[i]):
@@ -600,4 +612,5 @@ class TeXNineDocument(TeXNineBase, TeXNineSnippets):
         self.echomsg(self.messages["INVALID_BIBENTRY"].format(cword))
 
 logging.debug("TeX 9: Done with the Python module")
+
 # vim: tw=72 fdm=indent fdn=2

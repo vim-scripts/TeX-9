@@ -9,7 +9,7 @@
     Author: Elias Toivanen 
     Email: See README
     License: GPL
-    Version: 1.2
+    Version: 1.2.1
 
     TeX 9 is a ftplugin that aims to enhance the writing experience of high
     quality documents with LaTeX and Vim. The goal of TeX 9 is to be simple
@@ -67,7 +67,7 @@
         *   Default: {'app': 'xdg-open', 'target': 'pdf'}
 
     g:tex_bibfiles
-        *   Vim list that enumerates the BibTeX databases you want to use
+        *   Vim list that enumerates the BibTeX databases you want to use.
         *   You need only to specify the name of your database if the file 
             resides under a valid texmf tree, i.e. under
             `$TEXMFHOME/bibtex/bib/', or in the compilation folder.
@@ -102,8 +102,7 @@
 <
     Before you start typesetting documents, you may want to customize
     the document template file `tex_skeleton.tex' in the `skeleton'
-    directory.  The file `tex_skeleton.tex.xelatex' shows the skeleton file
-    that the author is currently using.
+    directory.  
 
     Finally, should you want to disable TeX 9 temporarily, put this in your
     vimrc: >

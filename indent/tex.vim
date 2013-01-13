@@ -6,7 +6,7 @@
 " Last Update:  Oct 3, 2011
 "               ET: Modified this script for TeX 9. Items are indented
 "               automatically.
-" Version: 0.02
+" Version: 1.2.1
 
 setlocal indentexpr=TeXNineIndent()
 setlocal nolisp

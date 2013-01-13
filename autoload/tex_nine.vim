@@ -15,7 +15,7 @@
 "    You should have received a copy of the GNU General Public License
 "    along with this program. If not, see <http://www.gnu.org/licenses/>.
 "                    
-"    Copyright Elias Toivanen, 2012
+"    Copyright Elias Toivanen, 2011, 2012
 "************************************************************************
 
 if !has('python')
@@ -25,6 +25,10 @@ endif
 
 "************************************************************************
 "                Vimscript wrappers {{{1
+
+function! tex_nine#Forward_search()
+    python document.forward_search(vim.current.buffer.name, vim.current)
+endfunction
 
 function! tex_nine#Update_header()
     python document.update_header(vim.current.buffer)
@@ -38,12 +42,12 @@ endfunction
 
 function! tex_nine#Deepcompile()
     unsilent echo "Compiling...\r"
-    python document.compile(vim.current.buffer)
+    python document.compile(vim.current.buffer.name)
 endfunction
 
 function! tex_nine#Quickcompile()
     unsilent echo "Compiling...\r"
-    python document.compile(vim.current.buffer, quick=True)
+    python document.compile(vim.current.buffer.name, quick=True)
 endfunction
 
 function! tex_nine#Premake()
@@ -63,7 +67,7 @@ endfunction
 
 function! tex_nine#View_document()
     echo "Viewing the document...\r"
-    python document.view(vim.current.buffer)
+    python document.view(vim.current.buffer.name)
 endfunction
 
 function! tex_nine#Setup_omni(bibfiles, update)
@@ -102,10 +106,10 @@ function! tex_nine#Smart_insert(keyword, ...)
         let line = getline('.')
         let pos = col('.')
 
-        if line =~ pattern && line[pos-1:] =~ ',\|{\|}'
+        if line[:pos] =~ pattern && line[pos-1:] =~ ',\|{\|}'
                 return ""
         else
-                return a:keyword.""
+                return a:keyword."}\<Esc>ha"
         endif
 endfunction
 
@@ -135,7 +139,7 @@ function! tex_nine#Insert_snippet(...)
 endfunction
 
 function! tex_nine#Environment_operator(mode)
-    python env = get_latex_environment(vim.current.window)
+    python env = utils.get_latex_environment(vim.current.window)
     python begin, end = env['range']
     python if not begin and not end: vim.command('return "\<Esc>"')
     if a:mode == 'inner'
@@ -144,12 +148,6 @@ function! tex_nine#Environment_operator(mode)
     endif
     python vim.command('return "\<Esc>:{0}\<Enter>V{1}jO"'.format(begin, end-begin))
 endfunction
-
-"function! tex_nine#Sync_source()
-"    unsilent echo "Syncing sources...\r"
-"    "exe "silent" "make!" "-no-pdf" "-synctex=1" fnameescape(expand('%:p')) 
-"    exe "silent" "make!" "-synctex=1" fnameescape(expand('%:p')) 
-"endfunction
 
 "}}}
 "************************************************************************

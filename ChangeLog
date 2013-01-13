@@ -52,3 +52,16 @@ list.
     viewer launching, SyncTeXing.
 
 --Elias Toivanen, Tue 01 May 2012 10:19:20 AM CEST
+
+1.2.1
+* Methods that work in multi-file projects are now implemented with Python
+decorators
+* Improved label completion: display the filename where the label is declared
+in the pop-up menu
+* Improved <LocalLeader>R and <LocalLeader>C: append closing brace "}".
+* New function tex_nine#Forward_search()
+* NO_MODELINE message: consider also the case of empty file.
+* Improved citation completion: consider only current line up to cursor
+position
+* <LocalLeader>½ inserts \sqrt{}
+--Elias Toivanen, Sun 13 Jan 2013 07:48:47 PM EET

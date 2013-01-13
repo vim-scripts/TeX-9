@@ -4,7 +4,7 @@ TeX 9
                        
     Author: Elias Toivanen 
     License: GPL
-    Version: 1.2
+    Version: 1.2.1
 
     TeX 9 is a ftplugin that aims to enhance the writing experience of high
     quality documents with LaTeX and Vim. The goal of TeX 9 is to be simple

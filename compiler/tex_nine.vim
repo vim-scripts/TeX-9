@@ -1,6 +1,7 @@
 " LaTeX filetype plugin: Compiler file
 " Compiler:     TeX and friends
 " Last Change:  June 22, 2011
+" Version:      1.2.1
 
 " This compiler file doesn't differ that much from the vanilla system file.
 " Sophisticated features are bound to autocommands QuickFixCmdPre and

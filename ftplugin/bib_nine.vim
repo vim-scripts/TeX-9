@@ -1,7 +1,7 @@
 " LaTeX filetype plugin: BibTeX settings
 " Language:     BibTeX (ft=bib)
 " Maintainer:   Elias Toivanen
-" Version:	1.2beta
+" Version:	1.2.1
 " Last Change:	
 " Licence:      GPL
 

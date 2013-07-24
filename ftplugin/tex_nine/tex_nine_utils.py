@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #************************************************************************
 #
-#                     TeX 9 library: Python module
+#                     TeX-9 library: Python module
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -16,15 +16,22 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #                    
-#    Copyright Elias Toivanen, 2011, 2012
+#    Copyright Elias Toivanen, 2011, 2012, 2013
 #
 #************************************************************************
 
 import re
 import vim
-import itertools
+import sys
 
 # Utility functions
+
+def echoerr(errorstr):
+    sys.stderr.write("TeX-9: {0}\n".format(str(errorstr)))
+
+def echomsg(msgstr):
+    sys.stdout.write("TeX-9: {0}\n".format(str(msgstr)))
+
 def get_latex_environment(vim_window):
     """Get information about the current LaTeX environment.
 
@@ -91,6 +98,20 @@ def is_latex_math_environment(vim_window,
     """Returns True if the cursor is currently on a maths environment."""
     e = get_latex_environment(vim_window)
     return  bool(environments.search(e['environment']))
+
+def find_compiler(vimbuffer, nlines=10):
+    """Finds the compiler from the header."""
+    lines = "\n".join(vimbuffer[:nlines])
+    if lines:
+        c = re.search("^%\s*Compiler:\s*(\S+)", lines, re.M)
+        if c:
+            return c.group(1).strip()
+        else:
+            return ""
+
+    else:
+        #Cannot determine the compiler
+        return ""
 
 class TeXNineError(Exception):
     pass

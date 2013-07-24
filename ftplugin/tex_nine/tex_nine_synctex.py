@@ -3,16 +3,20 @@ import evince_dbus
 from urllib import pathname2url, url2pathname
 import dbus.mainloop.glib
 import vim
+import time
 
 class TeXNineSyncTeX(evince_dbus.EvinceWindowProxy):
-    def __init__(self, b, target):
-        self.uri = self._path_to_uri("{0}.{1}".format(b.buffer.name[:-len('.tex')], target))
-        evince_dbus.EvinceWindowProxy.__init__(self, self.uri, True)
-        self.source_handler = self.source_handler_vim
+    def __init__(self, target, logger = None):
+
+        self.uri = self._path_to_uri(target)
+        evince_dbus.EvinceWindowProxy.__init__(self, self.uri,
+                                               spawn = False,
+                                               logger = logger)
+        self.set_source_handler(self.source_handler_vim) 
 
     # Forward search: Vim -> Evince
     def forward_search(self, fname, cursor):
-        self.SyncView(fname, cursor, 0)
+        self.SyncView(fname, cursor, int(time.time()))
 
     # Backward search: Evince -> Vim
     def source_handler_vim(self, input_file, source_link, timestamp):
@@ -36,10 +40,6 @@ class TeXNineSyncTeX(evince_dbus.EvinceWindowProxy):
         uri = uri[len('file://'):]
         fname = url2pathname(uri).encode(enc)
         return fname
-
-    def set_uri(self, fname, target):
-        self.uri = self._path_to_uri("{0}.{1}".format(fname[:-len('.tex')], target))
-        return
 
 # Hook Vim to DBus
 dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)

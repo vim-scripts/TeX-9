@@ -41,7 +41,7 @@ function TeXNineIndent()
 
     let openingpat = '\\\(begin\|section\*\=\|paragraph\*\=\){\(.*\)}'  
     let endpat = '\\\(end\|section\*\=\|paragraph\*\=\){\(.*\)}'
-    let excluded = 'document\|verbatim'
+    let excluded = 'begin{document}\|begin{verbatim}\|end{document}\|end{verbatim}'
 
     " Add/remove a 'shiftwidth' after an environment begins/ends.
     " Add an additional 'shiftwidth' when entering a list and when typing in
@@ -50,7 +50,7 @@ function TeXNineIndent()
         let ind += &sw
 
         " Add another sw for item-environments
-        if line =~ 'itemize\|description\|enumerate\|thebibliography'
+        if line =~ 'itemize\|description\|enumerate\|thebibliography\|parts'
             let ind += &sw
         endif
     endif
@@ -59,17 +59,17 @@ function TeXNineIndent()
     if cline =~ endpat && cline !~ excluded
         let ind -= &sw
         " Remove another sw for item-environments
-        if cline =~ 'itemize\|description\|enumerate\|thebibliography' 
+        if cline =~ 'itemize\|description\|enumerate\|thebibliography\|parts' 
             let ind -= &sw
         endif
     endif
 
     " Special treatment for 'item'
-    if cline =~ '^\s*\\\(bib\)\=item' 
+    if cline =~ '^\s*\\\(bib\)\=item\|^\s*\\part' 
         let ind -= &sw
     endif
 
-    if line =~ '^\s*\\\(bib\)\=item' 
+    if line =~ '^\s*\\\(bib\)\=item\|^\s*\\part' 
         let ind += &sw
     endif
 

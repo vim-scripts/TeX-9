@@ -65,3 +65,20 @@ in the pop-up menu
 position
 * <LocalLeader>½ inserts \sqrt{}
 --Elias Toivanen, Sun 13 Jan 2013 07:48:47 PM EET
+
+1.3.1
+* New configuration logic via a dictionary
+* Skeleton files per compiler -- latex, pdflatex, xelatex,make
+* API changes:
+-  pass vim.current.buffer instead of vim.current.buffer.name
+-  use pyeval() when needed
+-  lazy load data whenever possible
+-  renamed autoload functions and removed ! from function statements
+* Significantly more robust handling of multi-file project
+* Remove compiler file -- introduce tex_nine#SetCompiler()
+* Make is allowed to be a makeprg
+* Bugfix: indentation in sections whose caption contain the word `document'
+* Bugfix: buggy setting `notimeout' removed
+* Bugfix: insertion of citations and references is once again better
+* Bugfix: Notice if \bibliographystyle is not found
+--Elias Toivanen, 2013-07-11

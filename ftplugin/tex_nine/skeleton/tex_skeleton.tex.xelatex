@@ -1,0 +1,25 @@
+% vim:tw=72 sw=2 ft=tex
+%         File: ${_file}
+% Date Created: ${_date_created}
+%  Last Change: 
+%     Compiler: xelatex
+%       Author: ${_author}
+\documentclass[12pt,a4paper]{article}
+\usepackage{amsmath, amssymb}
+\usepackage{fontspec}
+\defaultfontfeatures{Ligatures=TeX}
+\usepackage[math-style=ISO,
+            bold-style=ISO]{unicode-math}
+\usepackage{polyglossia}
+\setdefaultlanguage{english}
+
+% The rest
+\usepackage{graphicx}
+\usepackage{booktabs, tabularx}
+\usepackage{url}
+\usepackage[super]{natbib}
+
+\begin{document}
+
+
+\end{document}

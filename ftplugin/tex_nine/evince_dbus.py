@@ -137,11 +137,18 @@ class EvinceWindowProxy:
 
         if self.status == CLOSED: 
             return False
-        self.window.SyncView(self._tmp_syncview[0],
-                             self._tmp_syncview[1],
-                             self._tmp_syncview[2],
-                             dbus_interface="org.gnome.evince.Window")
-        del self._tmp_syncview
-        self._handler = None
-        return True
+
+        try:
+            self.window.SyncView(self._tmp_syncview[0],
+                                 self._tmp_syncview[1],
+                                 self._tmp_syncview[2],
+                                 dbus_interface="org.gnome.evince.Window")
+            del self._tmp_syncview
+            self._handler = None
+            return True
+
+        except AttributeError:
+            # When restarting Vim, _tmp_syncview is forgotten
+            return False
+
 

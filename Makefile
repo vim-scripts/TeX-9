@@ -1,8 +1,8 @@
 
 VERSION=`git describe`
 PROGRAM=tex_nine
-NAME=$(PROGRAM)-$(VERSION).tar.gz
+NAME=$(PROGRAM)-$(VERSION)
 
 all:
-	git archive -o $(NAME) -9 $(VERSION)
+	git archive --prefix=$(NAME)/ -o $(NAME).tar.gz -9 $(VERSION)
 

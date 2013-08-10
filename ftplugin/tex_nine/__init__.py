@@ -238,7 +238,7 @@ class TeXNineBibTeX(TeXNineBase):
         try:
             with open(fname) as f:
                 logging.debug("TeX-9: Reading BibTeX entries from `{0}'".format(path.basename(fname)))
-                return re.findall('^@\w+ *{([^, ]+) *,', f.read(), re.M)
+                return re.findall('^@\w+ *{\s*([^, ]+) *,', f.read(), re.M)
 
         except IOError:
             echoerr(messages["INVALID_BIBFILE"].format(fname))
@@ -367,6 +367,7 @@ class TeXNineOmni(TeXNineBibTeX):
             if not masterbuffer:
                 e = messages['MASTER_NOT_ACTIVE'].format(basename)
                 raise TeXNineError(e)
+            logging.debug('TeX-9: Found {0} labels'.format(len(labels)))
             return labels
 
         labels, included = zip(*match)
@@ -376,20 +377,23 @@ class TeXNineOmni(TeXNineBibTeX):
         labels = [dict(word=i, menu=basename) for i in labels]
         for fname in included:
 
-            logging.debug("TeX-9: Reading from included files...")
+            logging.debug("TeX-9: Reading from included file `{0}'...".format(fname))
 
             if not fname.endswith('.tex'):
                 fname += '.tex'
 
-            with open(path.join(master_folder, fname)) as f:
-                try:
+            try:
+                with open(path.join(master_folder, fname), 'r') as f:
                     inc_labels = re.findall(r'\\label{(?P<label>[^,}]+)}',
                                             f.read()) 
                     inc_labels = [dict(word=i, menu=fname) for i in inc_labels] 
                     labels += inc_labels
-                except IOError, e:
-                    logging.debug(str(e).decode('string-escape'))
+            except IOError, e:
+                # Do not raise an error because the \include statement might
+                # be commented
+                logging.debug(str(e).decode('string_escape'))
 
+        logging.debug('TeX-9: Found {0} labels'.format(len(labels)))
         return labels
 
     def _fonts(self):

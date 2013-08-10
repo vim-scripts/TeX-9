@@ -1,7 +1,7 @@
 " LaTeX filetype plugin
 " Languages:    LaTeX
 " Maintainer:   Elias Toivanen
-" Version:      1.3.1
+" Version:      1.3.7
 " Last Change:  
 " License:      GPL
 
@@ -65,7 +65,13 @@ call tex_nine#SetAutoCmds(b:tex_nine_config)
 " Mappings
 
 " Leader
-let g:maplocalleader = b:tex_nine_config.leader
+
+" Save old leader
+if exists('g:maplocalleader')
+    let s:maplocalleader_saved = g:maplocalleader
+endif
+
+let g:maplocalleader = b:tex_nine_config.leader 
 
 " Templates
 noremap <buffer><silent> <F1> :call tex_nine#InsertSkeleton(b:tex_nine_skeleton.'.xelatex')<CR>
@@ -83,8 +89,8 @@ noremap <buffer><silent> <LocalLeader>K :call tex_nine#Compile(1, b:tex_nine_con
 " Misc
 noremap <buffer><silent> <LocalLeader>U :call tex_nine#Reconfigure(b:tex_nine_config)<CR>
 noremap <buffer><silent> <LocalLeader>Q :copen<CR>
-noremap <buffer><silent> <C-B> ?\\begin\\|\\end<CR>
-noremap <buffer><silent> <C-F> /\\end\\|\\begin<CR>
+noremap <buffer><silent> <C-F>  :silent! /\(end{\)\@<!\(section\\|chapter\)<CR>
+noremap <buffer><silent> <C-B>  :silent! ?\(end{\)\@<!\(section\\|chapter\)<CR>
 noremap <buffer><silent> gd yiB/\\label{<C-R>0}<CR>
 noremap <buffer><silent> gb :call tex_nine#Bibquery(expand('<cword>'))<CR>
 
@@ -93,6 +99,7 @@ inoremap <buffer> <LocalLeader><LocalLeader> <LocalLeader>
 inoremap <buffer> <LocalLeader>K 
 inoremap <buffer> <LocalLeader>M \
 inoremap <buffer><expr> <LocalLeader>B tex_nine#InsertSnippet()
+imap <buffer><expr> <LocalLeader>E tex_nine#SmartInsert('\eqref{')
 imap <buffer><expr> <LocalLeader>R tex_nine#SmartInsert('\ref{')
 imap <buffer><expr> <LocalLeader>C tex_nine#SmartInsert('\cite{', '\[cC]ite')
 
@@ -179,4 +186,8 @@ omap <buffer><silent> ae :normal vae<CR>
 vmap <buffer><expr> ie tex_nine#EnvironmentOperator('inner')
 omap <buffer><silent> ie :normal vie<CR>
 
-unlet g:maplocalleader
+if exists('s:maplocalleader_saved')
+    let g:maplocalleader = s:maplocalleader_saved
+else
+    unlet g:maplocalleader
+endif

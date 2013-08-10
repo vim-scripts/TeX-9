@@ -72,8 +72,9 @@ function tex_nine#InsertSkeleton(skeleton)
    python document.insert_skeleton(vim.current.buffer, vim.eval('a:skeleton'))
    update
    edit
-   " Enter insert mode for safety
+   " Enter insert mode for safety and set the buffer as modified
    startinsert
+   setlocal mod
 endfunction
 
 function tex_nine#OmniCompletion(findstart, base)

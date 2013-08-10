@@ -1,7 +1,7 @@
 " LaTeX filetype plugin
 " Languages:    BibTeX
 " Maintainer:   Elias Toivanen
-" Version:      1.3.1
+" Version:      1.3.7
 " Last Change:  
 " License:      GPL
 
@@ -53,6 +53,10 @@ call tex_nine#AddBuffer(b:tex_nine_config, b:bib_nine_snippets)
 
 "***********************************************************************
 
+" Save old leader
+if exists('g:maplocalleader')
+    let s:maplocalleader_saved = g:maplocalleader
+endif
 let g:maplocalleader = b:tex_nine_config.leader
 
 inoremap <buffer><expr> <LocalLeader>B tex_nine#InsertSnippet()
@@ -129,4 +133,8 @@ inoremap <buffer><expr> ~ tex_nine#IsLeft('~') ? '<BS>\approx' : '~'
 inoremap <buffer><expr> < tex_nine#IsLeft('<') ? '<BS>\ll' : '<'
 inoremap <buffer><expr> > tex_nine#IsLeft('>') ? '<BS>\gg' : '>'
 
-unlet g:maplocalleader
+if exists('s:maplocalleader_saved')
+    let g:maplocalleader = s:maplocalleader_saved
+else
+    unlet g:maplocalleader
+endif

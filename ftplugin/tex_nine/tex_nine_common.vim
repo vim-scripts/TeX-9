@@ -1,7 +1,7 @@
 " LaTeX filetype plugin: Common settings
 " Language:     LaTeX (ft=tex), BibTeX (ft=bib)
 " Maintainer:   Elias Toivanen
-" Version:	1.3.7
+" Version:	1.3.13
 " Last Change:	
 " Licence:      GPL
 
@@ -20,7 +20,7 @@
 "    You should have received a copy of the GNU General Public License
 "    along with this program. If not, see <http://www.gnu.org/licenses/>.
 "                    
-"    Copyright Elias Toivanen, 2011, 2012, 2013
+"    Copyright Elias Toivanen, 2011-2014
 "************************************************************************
 
 let s:path = fnameescape(expand('<sfile>:h'))
@@ -37,7 +37,9 @@ let b:tex_nine_config = {
             \    'viewer' : {'app': 'xdg-open', 'target': 'pdf'}, 
             \    'disable' : 0, 
             \    'debug': 0,
-            \    'synctex' : 0
+            \    'synctex' : 0,
+            \    'extra_args' : '',
+            \    'shell_escape' : 0
             \}
 
 " Override values with user preferences

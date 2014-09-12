@@ -16,7 +16,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #                    
-#    Copyright Elias Toivanen, 2011, 2012, 2013
+#    Copyright Elias Toivanen, 2011-2014
 #
 #************************************************************************
 
@@ -91,7 +91,7 @@ messages = {
         'MASTER_NOT_ACTIVE': 'Please have the master file `{0}\' open in Vim.',
         'NO_OUTPUT':  'Output file `{0}\' does not exist.',
         'INVALID_HEADER': r'Missing information in header.',
-        'NO_BIBSTYLE': r'No bibliography style found in the document.',
+        'NO_BIBSTYLE': r'No valid bibliography style found in the document.',
         'NO_COMPILER': r'Compiler unknown.'
 }
 

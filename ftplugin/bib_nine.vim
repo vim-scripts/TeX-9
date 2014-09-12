@@ -1,7 +1,7 @@
 " LaTeX filetype plugin
 " Languages:    BibTeX
 " Maintainer:   Elias Toivanen
-" Version:      1.3.7
+" Version:      1.3.13
 " Last Change:  
 " License:      GPL
 
@@ -22,7 +22,7 @@
 "    You should have received a copy of the GNU General Public License
 "    along with this program. If not, see <http://www.gnu.org/licenses/>.
 "                    
-"    Copyright Elias Toivanen, 2011, 2012, 2013
+"    Copyright Elias Toivanen, 2011-2014
 "
 "
 "************************************************************************
@@ -130,8 +130,8 @@ inoremap <buffer><expr> _ tex_nine#IsLeft('_') ? '{}<Left>' : '_'
 inoremap <buffer><expr> ^ tex_nine#IsLeft('^') ? '{}<Left>' : '^'
 inoremap <buffer><expr> = tex_nine#IsLeft('=') ? '<BS>&=' : '='
 inoremap <buffer><expr> ~ tex_nine#IsLeft('~') ? '<BS>\approx' : '~'
-inoremap <buffer><expr> < tex_nine#IsLeft('<') ? '<BS>\ll' : '<'
-inoremap <buffer><expr> > tex_nine#IsLeft('>') ? '<BS>\gg' : '>'
+"inoremap <buffer><expr> < tex_nine#IsLeft('<') ? '<BS>\ll' : '<'
+"inoremap <buffer><expr> > tex_nine#IsLeft('>') ? '<BS>\gg' : '>'
 
 if exists('s:maplocalleader_saved')
     let g:maplocalleader = s:maplocalleader_saved

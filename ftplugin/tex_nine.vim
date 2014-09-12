@@ -1,13 +1,13 @@
 " LaTeX filetype plugin
 " Languages:    LaTeX
 " Maintainer:   Elias Toivanen
-" Version:      1.3.7
+" Version:      1.3.13
 " Last Change:  
 " License:      GPL
 
 "************************************************************************
 "
-"                     TeX-9 library: Python module
+"                     TeX-9 library: Vim script
 "
 "    This program is free software: you can redistribute it and/or modify
 "    it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 "    You should have received a copy of the GNU General Public License
 "    along with this program. If not, see <http://www.gnu.org/licenses/>.
 "                    
-"    Copyright Elias Toivanen, 2011, 2012, 2013
+"    Copyright Elias Toivanen, 2011-2014
 "
 "
 "************************************************************************
@@ -55,7 +55,7 @@ setlocal fo=tcq
 setlocal tw=72 sw=2
 setlocal tabstop=8 
 setlocal omnifunc=tex_nine#OmniCompletion
-setlocal completefunc=tex_nine#MathCompletion
+setlocal completefunc=tex_nine#MathCompletion 
 
 call tex_nine#AddBuffer(b:tex_nine_config, b:tex_nine_snippets)
 call tex_nine#SetAutoCmds(b:tex_nine_config)
@@ -89,8 +89,6 @@ noremap <buffer><silent> <LocalLeader>K :call tex_nine#Compile(1, b:tex_nine_con
 " Misc
 noremap <buffer><silent> <LocalLeader>U :call tex_nine#Reconfigure(b:tex_nine_config)<CR>
 noremap <buffer><silent> <LocalLeader>Q :copen<CR>
-noremap <buffer><silent> <C-F>  :silent! /\(end{\)\@<!\(section\\|chapter\)<CR>
-noremap <buffer><silent> <C-B>  :silent! ?\(end{\)\@<!\(section\\|chapter\)<CR>
 noremap <buffer><silent> gd yiB/\\label{<C-R>0}<CR>
 noremap <buffer><silent> gb :call tex_nine#Bibquery(expand('<cword>'))<CR>
 
@@ -144,9 +142,13 @@ inoremap <buffer> <LocalLeader>X \Xi
 inoremap <buffer> <LocalLeader>Y \Psi
 
 " Math
+
+" Start mathmode completion
+inoremap <buffer> <LocalLeader>\ \setminus
 inoremap <buffer> <LocalLeader>½ \sqrt{}<Left>
 inoremap <buffer> <LocalLeader>N \nabla
 inoremap <buffer> <LocalLeader>S \sum_{}^{}<Esc>F}i
+inoremap <buffer> <LocalLeader>V \vec{}<Left>
 inoremap <buffer> <LocalLeader>I \int\limits_{}^{}<Esc>F}i
 inoremap <buffer> <LocalLeader>0 \emptyset
 inoremap <buffer> <LocalLeader>6 \partial
@@ -155,7 +157,7 @@ inoremap <buffer> <LocalLeader>/ \frac{}{}<Esc>F}i
 inoremap <buffer> <LocalLeader>v \vee
 inoremap <buffer> <LocalLeader>& \wedge
 inoremap <buffer> <LocalLeader>@ \circ
-inoremap <buffer> <LocalLeader>\ \setminus
+inoremap <buffer> <LocalLeader>* \cdot
 inoremap <buffer> <LocalLeader>= \equiv
 inoremap <buffer> <LocalLeader>- \bigcap
 inoremap <buffer> <LocalLeader>+ \bigcup
@@ -177,8 +179,10 @@ inoremap <buffer><expr> _ tex_nine#IsLeft('_') ? '{}<Left>' : '_'
 inoremap <buffer><expr> ^ tex_nine#IsLeft('^') ? '{}<Left>' : '^'
 inoremap <buffer><expr> = tex_nine#IsLeft('=') ? '<BS>&=' : '='
 inoremap <buffer><expr> ~ tex_nine#IsLeft('~') ? '<BS>\approx' : '~'
-inoremap <buffer><expr> < tex_nine#IsLeft('<') ? '<BS>\ll' : '<'
-inoremap <buffer><expr> > tex_nine#IsLeft('>') ? '<BS>\gg' : '>'
+
+" These are problematic when you want to type << or >> (C bitshift, C++ operators) 
+"inoremap <buffer><expr> < tex_nine#IsLeft('<') ? '<BS>\ll' : '<'
+"inoremap <buffer><expr> > tex_nine#IsLeft('>') ? '<BS>\gg' : '>'
 
 " Robust inner/outer environment operators
 vmap <buffer><expr> ae tex_nine#EnvironmentOperator('outer')

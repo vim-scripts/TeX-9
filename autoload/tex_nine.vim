@@ -28,15 +28,22 @@ EOF
 endfunction
 
 function tex_nine#GetCompiler(config)
-    if a:config.compiler != ""
+
+    " The mode line takes precedence
+    silent! let tex_nine_compiler = pyeval('document.get_compiler(vim.current.buffer)')
+
+    " The compiler was set in vimrc
+    if tex_nine_compiler == "" && a:config.compiler != ""
         let tex_nine_compiler = a:config.compiler
-    else
-        let tex_nine_compiler = pyeval('document.get_compiler(vim.current.buffer)')
     endif
+
+    " Side effect: configure the compilation flags
     if &l:makeprg == "" && tex_nine_compiler != ""
-        call tex_nine#ConfigureCompiler(tex_nine_compiler, a:config.synctex)
+        call tex_nine#ConfigureCompiler(tex_nine_compiler, a:config.synctex, a:config.shell_escape, a:config.extra_args)
     endif
+
     return tex_nine_compiler
+
 endfunction
 
 
@@ -89,9 +96,22 @@ endfunction
 
 function tex_nine#MathCompletion(findstart, base)
     if a:findstart
-        return col('.')
+        let line = getline('.')
+        let start = col('.') - 1
+        while start > 0 && line[start - 1] != '\'
+            if line[start] == ' ' | return -2 | endif
+            let start -= 1
+        endwhile
+        return start
     else
         let compl = pyeval('tex_nine_maths_cache')
+        call filter(compl, 'v:val.word =~ "^'.a:base.'"')
+        "let res = []
+        "for m in compl
+        "    if m.word =~ '^'.a:base
+        "        call add(res, m)
+        "    endif
+        "endfor
         return compl
     endif
 endfunction
@@ -109,6 +129,14 @@ endfunction
 function tex_nine#IsLeft(lchar)
     let left = getline('.')[col('.')-2]
     return left == a:lchar ? 1 : 0
+endfunction
+
+function tex_nine#ChangeFontStyle(style)
+    let str = 'di'
+    let is_math = pyeval("int(is_latex_math_environment(vim.current.window))")
+    let str .= is_math ? '\math'.a:style : '\text'.a:style
+    let str .= "{}\<Left>\<C-R>\""
+    return str
 endfunction
 
 function tex_nine#SmartInsert(keyword, ...)
@@ -191,6 +219,18 @@ document.setup_snippets(vim.eval('a:snipfile'),
                         vim.eval('&ft'))
 
 EOF
+if a:config.synctex == 1
+python << EOF
+try:
+    target = document.get_master_output(vim.current.buffer)
+    evince_proxy = tex_nine_synctex.TeXNineSyncTeX(target, logging) 
+    document.buffers[vim.current.buffer.name]['synctex'] = evince_proxy
+except (TeXNineError, NameError) as e:
+    msg = 'TeX-9: Failed to connect to an Evince window: {0}'.format(str(e).decode('string_escape'))
+    logging.debug(msg)
+    pass
+EOF
+endif
 endfunction
 
 function tex_nine#SetAutoCmds(config)
@@ -219,20 +259,23 @@ except TeXNineError, e:
     # It may be not an error. The user may not use BibTeX...
     echomsg("Cannot update BibTeX databases: "+str(e))
 EOF
-    if a:config.compiler == ""
-        silent! let tex_nine_compiler = pyeval('document.get_compiler(vim.current.buffer, update=True)')
-        let msg = ""
-    else
-        let tex_nine_compiler = a:config.compiler 
-        let msg = " (set in vimrc)"
+    
+    silent! let tex_nine_compiler = pyeval('document.get_compiler(vim.current.buffer, update=True)')
+
+    " Did it succeed?
+    if tex_nine_compiler == "" && a:config.compiler == ""
+        python echomsg("Cannot determine the compiler: Make sure the header contains the compiler line or compiler is set in vimrc.")
+        return
     endif
 
+    " Modeline takes precedence 
+    let tex_nine_compiler = tex_nine_compiler ? a:config.compiler : tex_nine_compiler 
+
     if tex_nine_compiler != ""
-        call tex_nine#ConfigureCompiler(tex_nine_compiler, a:config.synctex)
-        python echomsg("Updated the compiler...using `{}'.{}".format(vim.eval('tex_nine_compiler'), vim.eval('msg')))
+        call tex_nine#ConfigureCompiler(tex_nine_compiler, a:config.synctex, a:config.shell_escape, a:config.extra_args)
+        python echomsg("Updated the compiler...using `{}'.".format(vim.eval('tex_nine_compiler')))
     else
-        python echomsg("Cannot determine the compiler: Make sure the header contains the compiler line.")
-        echomsg msg
+        python echomsg("Cannot determine the compiler: Make sure the header contains the compiler line or compiler is set in vimrc.")
     endif
 endfunction
 
@@ -258,7 +301,7 @@ function tex_nine#Compile(deep, config)
             python document.compile(vim.current.buffer, vim.eval('tex_nine_compiler'))
         endif
         " Make and do not jump to the first error
-        exe 'silent' 'make!' escape(master, ' ')
+        exe 'silent' 'make!' escape(fnamemodify(master, ':t'), ' ')
         lcd -
     endif
 
@@ -276,7 +319,7 @@ function tex_nine#Compile(deep, config)
 
 endfunction
 
-function tex_nine#ConfigureCompiler(compiler, synctex)
+function tex_nine#ConfigureCompiler(compiler, synctex, shell_escape, extra_args)
     " Configure the l:makeprg variable according to user's preference
 
     let &l:makeprg = a:compiler
@@ -285,6 +328,10 @@ function tex_nine#ConfigureCompiler(compiler, synctex)
         if a:synctex
             let &l:makeprg .= ' -synctex=1'
         endif
+        if a:shell_escape
+            let &l:makeprg .= ' -shell-escape'
+        endif
+        let &l:makeprg .= ' '.a:extra_args
     endif
     let &l:makeprg .= ' $*'
 

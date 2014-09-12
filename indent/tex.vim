@@ -6,7 +6,7 @@
 " Last Update:  2013-08-06
 "               ET: Modified this script for TeX 9. Items are indented
 "               automatically.
-" Version: 1.3.7
+" Version: 1.3.13
 
 " Disable system wide indentation
 let b:did_indent = 1 
